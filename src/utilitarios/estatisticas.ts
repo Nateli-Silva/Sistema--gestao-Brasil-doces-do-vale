@@ -14,7 +14,7 @@ export function agruparPorProduto(vendas: readonly Venda[]): TotaisProduto[] {
       const atual = mapa.get(item.produtoId) ?? { unidades: 0, receitaCentavos: 0 };
       mapa.set(item.produtoId, {
         unidades: atual.unidades + item.quantidade,
-        receitaCentavos: atual.receitaCentavos + item.quantidade * item.precoUnitarioCentavos,
+        receitaCentavos: atual.receitaCentavos + item.subtotalCentavos,
       });
     }
   }

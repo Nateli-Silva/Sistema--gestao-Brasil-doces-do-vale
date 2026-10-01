@@ -2,12 +2,21 @@ import type { Request, Response } from 'express';
 import type { ServicoCatalogo } from '../servicos/servico-catalogo.js';
 import type { ServicoCliente } from '../servicos/servico-cliente.js';
 import type { ServicoVenda } from '../servicos/servico-venda.js';
+import { converterParaCentavos } from '../utilitarios/formatacao.js';
 import { inteiro, lerCampos, lista, texto, type CamposFormulario } from '../utilitarios/formulario.js';
 import { FORMULARIO_VAZIO, type ContextoFormulario } from '../visoes/componentes/formulario.js';
 import { paginaDetalheVenda, paginaFormularioVenda, paginaListaVendas } from '../visoes/paginas/vendas.js';
 import { ControladorBase } from './controlador-base.js';
 
-type LinhaFormulario = { produtoId: string; quantidade: string };
+interface LinhaFormulario {
+  produtoId: string;
+  formato: string;
+  quantidade: string;
+  unidadesPorCaixa: string;
+  valor: string;
+}
+
+const LINHA_VAZIA: LinhaFormulario = { produtoId: '', formato: 'UNIDADE', quantidade: '1', unidadesPorCaixa: '', valor: '' };
 
 export class ControladorVenda extends ControladorBase {
   protected readonly secao = 'vendas';
@@ -40,7 +49,7 @@ export class ControladorVenda extends ControladorBase {
 
   formularioNovo = (req: Request, res: Response): void => {
     const cliente = typeof req.query.cliente === 'string' ? req.query.cliente : '';
-    this.renderizarFormulario(req, res, { valores: { clienteId: cliente, formaPagamento: 'PIX' }, erros: {} }, [{ produtoId: '', quantidade: '1' }]);
+    this.renderizarFormulario(req, res, { valores: { clienteId: cliente, formaPagamento: 'PIX' }, erros: {} }, [LINHA_VAZIA]);
   };
 
   registrar = (req: Request, res: Response): void => {
@@ -51,7 +60,16 @@ export class ControladorVenda extends ControladorBase {
         clienteId: texto(campos, 'clienteId'),
         formaPagamento: texto(campos, 'formaPagamento'),
         observacao: texto(campos, 'observacao'),
-        itens: linhas.filter((l) => l.produtoId !== '').map((l) => ({ produtoId: l.produtoId, quantidade: inteiro(l.quantidade) })),
+        itens: linhas
+          .filter((l) => l.produtoId !== '')
+          .map((l) => ({
+            produtoId: l.produtoId,
+            formato: l.formato,
+            quantidade: inteiro(l.quantidade),
+            unidadesPorCaixa: inteiro(l.unidadesPorCaixa),
+            // Valor em branco usa o valor cadastrado do produto.
+            valorCentavos: l.valor === '' ? undefined : converterParaCentavos(l.valor),
+          })),
       });
       this.redirecionar(res, `/vendas/${venda.id}`, 'Venda registrada e estoque atualizado.');
     } catch (erro) {
@@ -61,11 +79,21 @@ export class ControladorVenda extends ControladorBase {
     }
   };
 
-  /** Pareia as listas `produtoId` e `quantidade` enviadas pelas linhas de itens. */
+  /** Pareia as listas enviadas pelas linhas (cada campo vem na mesma ordem das linhas). */
   private lerLinhas(campos: CamposFormulario): LinhaFormulario[] {
-    const produtos = lista(campos, 'produtoId');
-    const quantidades = lista(campos, 'quantidade');
-    return produtos.map((produtoId, i) => ({ produtoId, quantidade: quantidades[i] ?? '' }));
+    const colunas = {
+      formato: lista(campos, 'formato'),
+      quantidade: lista(campos, 'quantidade'),
+      unidadesPorCaixa: lista(campos, 'unidadesPorCaixa'),
+      valor: lista(campos, 'valor'),
+    };
+    return lista(campos, 'produtoId').map((produtoId, i) => ({
+      produtoId,
+      formato: colunas.formato[i] ?? 'UNIDADE',
+      quantidade: colunas.quantidade[i] ?? '',
+      unidadesPorCaixa: colunas.unidadesPorCaixa[i] ?? '',
+      valor: colunas.valor[i] ?? '',
+    }));
   }
 
   private renderizarFormulario(req: Request, res: Response, formulario: ContextoFormulario = FORMULARIO_VAZIO, linhas: LinhaFormulario[], erroGeral?: string): void {
@@ -76,7 +104,7 @@ export class ControladorVenda extends ControladorBase {
       paginaFormularioVenda({
         clientes: this.clientes.listar(),
         produtos: this.catalogo.listarProdutos({ somenteAtivos: true }),
-        linhas: linhas.length > 0 ? linhas : [{ produtoId: '', quantidade: '1' }],
+        linhas: linhas.length > 0 ? linhas : [LINHA_VAZIA],
         formulario,
         erroGeral,
       }),

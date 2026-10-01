@@ -10,7 +10,7 @@ function formularioNovoSabor(categorias: readonly Categoria[], contexto: Context
   <form method="post" action="/catalogo/sabores" class="formulario formulario--grade">
     ${campoSelecao(contexto, { nome: 'categoriaId', rotulo: 'Categoria', obrigatorio: true, vazio: 'Selecione…', opcoes: categorias.map((c) => ({ valor: c.id, rotulo: c.nome })) })}
     ${campoTexto(contexto, { nome: 'sabor', rotulo: 'Nome do sabor', obrigatorio: true, placeholder: 'Ex.: Maracujá com chocolate branco' })}
-    ${campoTexto(contexto, { nome: 'preco', rotulo: 'Preço unitário (R$)', obrigatorio: true, placeholder: '0,00', atributos: 'inputmode="decimal"' })}
+    ${campoTexto(contexto, { nome: 'preco', rotulo: 'Valor por unidade (R$)', obrigatorio: true, placeholder: '0,00', atributos: 'inputmode="decimal"', ajuda: 'Valor sugerido na venda; você pode alterar em cada venda.' })}
     ${campoTexto(contexto, { nome: 'estoqueMinimo', rotulo: 'Estoque mínimo', tipo: 'number', placeholder: '10', atributos: 'min="0" step="1"', ajuda: 'Abaixo disso o painel emite alerta.' })}
     <div class="formulario__acoes"><button class="botao botao--primario" type="submit">Cadastrar sabor</button></div>
   </form>`;

@@ -1,14 +1,30 @@
-import { ErroDeNegocio, ErroDeValidacao, ErroNaoEncontrado } from '../dominio/erros.js';
-import { FORMAS_PAGAMENTO, type FormaPagamento, type ItemVenda, type Venda } from '../dominio/tipos.js';
+import { ErroDeValidacao, ErroNaoEncontrado } from '../dominio/erros.js';
+import { FORMAS_PAGAMENTO, FORMATOS_VENDA, type FormaPagamento, type FormatoVenda, type ItemVenda, type Venda } from '../dominio/tipos.js';
 import type { Repositorios } from '../repositorios/repositorios.js';
 import { agruparPorProduto, ordenarPorUnidades, produtoFavorito, somarTotal, type TotaisProduto } from '../utilitarios/estatisticas.js';
 import type { ServicoEstoque, PedidoMovimento } from './servico-estoque.js';
+
+/** Linha da venda como informada na tela. */
+export interface PedidoItemVenda {
+  readonly produtoId: string;
+  /** Padrão: UNIDADE. */
+  readonly formato?: string;
+  /** Unidades (formato UNIDADE) ou número de caixas (formato CAIXA). */
+  readonly quantidade: number;
+  /** Obrigatório no formato CAIXA: unidades dentro de cada caixa (varia a cada venda). */
+  readonly unidadesPorCaixa?: number;
+  /**
+   * Valor definido por quem vende, por unidade (UNIDADE) ou por caixa (CAIXA).
+   * Se omitido, usa o valor cadastrado do produto (na caixa: unidades × valor unitário).
+   */
+  readonly valorCentavos?: number;
+}
 
 export interface DadosVenda {
   readonly clienteId: string;
   readonly formaPagamento: string;
   readonly observacao: string;
-  readonly itens: readonly PedidoMovimento[];
+  readonly itens: readonly PedidoItemVenda[];
 }
 
 export interface HistoricoCliente {
@@ -76,39 +92,73 @@ export class ServicoVenda {
 
   registrar(dados: DadosVenda): Venda {
     const itens = this.montarItens(dados);
-    // Valida o estoque antes de gravar a venda, para que uma recusa não deixe registros órfãos.
-    this.estoque.garantirDisponibilidade(itens);
+    // Estoque é controlado em unidades; várias linhas do mesmo sabor são somadas na checagem.
+    const consumo = this.consolidarConsumo(itens);
+    this.estoque.garantirDisponibilidade(consumo);
     const venda = this.repos.vendas.inserir({
       clienteId: dados.clienteId,
       data: new Date().toISOString(),
       itens,
-      totalCentavos: itens.reduce((soma, i) => soma + i.quantidade * i.precoUnitarioCentavos, 0),
+      totalCentavos: itens.reduce((soma, i) => soma + i.subtotalCentavos, 0),
       formaPagamento: dados.formaPagamento as FormaPagamento,
       observacao: dados.observacao.trim(),
     });
-    this.estoque.saida(itens, 'VENDA', venda.id);
+    this.estoque.saida(consumo, 'VENDA', venda.id);
     return venda;
   }
 
-  /** Valida o pedido e consolida linhas repetidas do mesmo produto, fixando o preço vigente. */
+  private consolidarConsumo(itens: readonly ItemVenda[]): PedidoMovimento[] {
+    const soma = new Map<string, number>();
+    for (const item of itens) soma.set(item.produtoId, (soma.get(item.produtoId) ?? 0) + item.quantidade);
+    return [...soma].map(([produtoId, quantidade]) => ({ produtoId, quantidade }));
+  }
+
+  /** Valida o pedido e calcula, por linha, as unidades que saem do estoque e o valor combinado. */
   private montarItens(dados: DadosVenda): ItemVenda[] {
     const erros: Record<string, string> = {};
     if (!this.repos.clientes.buscarPorId(dados.clienteId)) erros.clienteId = 'Escolha o cliente.';
     if (!(FORMAS_PAGAMENTO as readonly string[]).includes(dados.formaPagamento)) erros.formaPagamento = 'Escolha a forma de pagamento.';
-
-    const consolidado = new Map<string, number>();
-    for (const item of dados.itens) {
-      if (!this.repos.produtos.buscarPorId(item.produtoId)) erros.itens = 'Selecione o produto em todas as linhas.';
-      else if (!Number.isInteger(item.quantidade) || item.quantidade <= 0) erros.itens = 'Informe quantidades inteiras maiores que zero.';
-      else consolidado.set(item.produtoId, (consolidado.get(item.produtoId) ?? 0) + item.quantidade);
-    }
     if (dados.itens.length === 0) erros.itens = 'Adicione ao menos um item à venda.';
-    if (Object.keys(erros).length > 0) throw new ErroDeValidacao(erros);
 
-    return [...consolidado].map(([produtoId, quantidade]) => {
-      const produto = this.repos.produtos.buscarPorId(produtoId);
-      if (!produto?.ativo) throw new ErroDeNegocio('Há um sabor inativo na venda.');
-      return { produtoId, quantidade, precoUnitarioCentavos: produto.precoCentavos };
-    });
+    const itens: ItemVenda[] = [];
+    for (const pedido of dados.itens) {
+      const produto = this.repos.produtos.buscarPorId(pedido.produtoId);
+      const formato = pedido.formato ?? 'UNIDADE';
+      if (!produto) {
+        erros.itens = 'Selecione o produto em todas as linhas.';
+      } else if (!produto.ativo) {
+        erros.itens = `O sabor "${produto.sabor}" está inativo.`;
+      } else if (!(FORMATOS_VENDA as readonly string[]).includes(formato)) {
+        erros.itens = 'Escolha se a venda é por unidade ou por caixa.';
+      } else if (!Number.isInteger(pedido.quantidade) || pedido.quantidade <= 0) {
+        erros.itens = 'Informe quantidades inteiras maiores que zero.';
+      } else {
+        const item = this.calcularItem(pedido, formato as FormatoVenda, produto.precoCentavos);
+        if (item) itens.push(item);
+        else erros.itens = 'Confira as unidades por caixa e o valor de cada item (maiores que zero).';
+      }
+    }
+    if (Object.keys(erros).length > 0) throw new ErroDeValidacao(erros);
+    return itens;
+  }
+
+  /** Retorna undefined se unidades por caixa ou valor forem inválidos. */
+  private calcularItem(pedido: PedidoItemVenda, formato: FormatoVenda, precoUnitario: number): ItemVenda | undefined {
+    const porCaixa = formato === 'CAIXA' ? pedido.unidadesPorCaixa : undefined;
+    if (formato === 'CAIXA' && (porCaixa === undefined || !Number.isInteger(porCaixa) || porCaixa <= 0)) return undefined;
+    const unidades = pedido.quantidade * (porCaixa ?? 1);
+    // Valor padrão: o do cadastro (por unidade); na caixa, unidades da caixa × valor unitário.
+    const valor = pedido.valorCentavos ?? precoUnitario * (porCaixa ?? 1);
+    if (!Number.isFinite(valor) || valor <= 0) return undefined;
+    const subtotal = Math.round(pedido.quantidade * valor);
+    return {
+      produtoId: pedido.produtoId,
+      formato,
+      quantidade: unidades,
+      caixas: formato === 'CAIXA' ? pedido.quantidade : null,
+      unidadesPorCaixa: porCaixa ?? null,
+      subtotalCentavos: subtotal,
+      precoUnitarioCentavos: Math.round(subtotal / unidades),
+    };
   }
 }

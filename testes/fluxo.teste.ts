@@ -121,3 +121,65 @@ test('datas e valores usam o relógio da loja (UTC−3) e não dependem do Intl'
   assert.equal(formatarMoeda(5), 'R$ 0,05');
   assert.equal(formatarInteiro(1234567), '1.234.567');
 });
+
+test('venda por caixa: baixa as unidades da caixa e usa o valor combinado', () => {
+  const { servicos, sabor, cliente } = novoCenario();
+  servicos.producao.registrar({ data: hojeIso(), observacao: '', itens: [{ produtoId: sabor.id, quantidade: 100 }] });
+  const venda = servicos.vendas.registrar({
+    clienteId: cliente.id, formaPagamento: 'PIX', observacao: '',
+    itens: [{ produtoId: sabor.id, formato: 'CAIXA', quantidade: 2, unidadesPorCaixa: 12, valorCentavos: 8000 }],
+  });
+  const item = venda.itens[0];
+  assert.equal(item?.formato, 'CAIXA');
+  assert.equal(item?.quantidade, 24); // 2 caixas × 12 unidades
+  assert.equal(item?.caixas, 2);
+  assert.equal(venda.totalCentavos, 16000); // 2 × R$ 80,00
+  assert.equal(servicos.catalogo.buscarProduto(sabor.id).quantidadeEstoque, 76);
+  // caixa sem valor informado: unidades da caixa × valor unitário do cadastro (R$ 6,50)
+  const sugerida = servicos.vendas.registrar({
+    clienteId: cliente.id, formaPagamento: 'PIX', observacao: '',
+    itens: [{ produtoId: sabor.id, formato: 'CAIXA', quantidade: 1, unidadesPorCaixa: 6 }],
+  });
+  assert.equal(sugerida.totalCentavos, 6 * 650);
+});
+
+test('valor por unidade pode ser alterado na venda sem mudar o cadastro', () => {
+  const { servicos, sabor, cliente } = novoCenario();
+  servicos.producao.registrar({ data: hojeIso(), observacao: '', itens: [{ produtoId: sabor.id, quantidade: 10 }] });
+  const venda = servicos.vendas.registrar({ clienteId: cliente.id, formaPagamento: 'DINHEIRO', observacao: '', itens: [{ produtoId: sabor.id, quantidade: 4, valorCentavos: 500 }] });
+  assert.equal(venda.totalCentavos, 2000);
+  assert.equal(servicos.catalogo.buscarProduto(sabor.id).precoCentavos, 650);
+});
+
+test('estoque é conferido somando todas as linhas do mesmo sabor', () => {
+  const { servicos, sabor, cliente } = novoCenario();
+  servicos.producao.registrar({ data: hojeIso(), observacao: '', itens: [{ produtoId: sabor.id, quantidade: 20 }] });
+  assert.throws(() => servicos.vendas.registrar({
+    clienteId: cliente.id, formaPagamento: 'PIX', observacao: '',
+    itens: [{ produtoId: sabor.id, quantidade: 15 }, { produtoId: sabor.id, formato: 'CAIXA', quantidade: 1, unidadesPorCaixa: 10 }],
+  }), ErroDeNegocio);
+  assert.equal(servicos.vendas.listar().length, 0);
+  assert.equal(servicos.catalogo.buscarProduto(sabor.id).quantidadeEstoque, 20);
+});
+
+test('caixa exige unidades por caixa; valor inválido é recusado', () => {
+  const { servicos, sabor, cliente } = novoCenario();
+  servicos.producao.registrar({ data: hojeIso(), observacao: '', itens: [{ produtoId: sabor.id, quantidade: 50 }] });
+  const base = { clienteId: cliente.id, formaPagamento: 'PIX', observacao: '' };
+  assert.throws(() => servicos.vendas.registrar({ ...base, itens: [{ produtoId: sabor.id, formato: 'CAIXA', quantidade: 1 }] }), ErroDeValidacao);
+  assert.throws(() => servicos.vendas.registrar({ ...base, itens: [{ produtoId: sabor.id, quantidade: 1, valorCentavos: Number.NaN }] }), ErroDeValidacao);
+  assert.throws(() => servicos.vendas.registrar({ ...base, itens: [{ produtoId: sabor.id, formato: 'PALETE', quantidade: 1 }] }), ErroDeValidacao);
+});
+
+test('vendas gravadas no formato antigo continuam válidas', () => {
+  const diretorio = fs.mkdtempSync(path.join(os.tmpdir(), 'doces-antigo-'));
+  const antiga = [{
+    id: 'v1', criadoEm: '2026-09-01T12:00:00.000Z', clienteId: 'c1', data: '2026-09-01T12:00:00.000Z', formaPagamento: 'PIX', observacao: '',
+    totalCentavos: 1950, itens: [{ produtoId: 'p1', quantidade: 3, precoUnitarioCentavos: 650 }],
+  }];
+  fs.writeFileSync(path.join(diretorio, 'vendas.json'), JSON.stringify(antiga));
+  const item = criarServicos(diretorio).vendas.listar()[0]?.itens[0];
+  assert.equal(item?.formato, 'UNIDADE');
+  assert.equal(item?.subtotalCentavos, 1950);
+  assert.equal(item?.caixas, null);
+});

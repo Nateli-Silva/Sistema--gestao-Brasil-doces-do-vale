@@ -85,4 +85,15 @@ for (let dia = 5; dia >= 0; dia--) {
 servicos.vendas.registrar({ clienteId: clientes[0]?.id ?? '', formaPagamento: 'FATURADO', observacao: 'Evento corporativo', itens: [{ produtoId: produtos[2]?.id ?? '', quantidade: servicos.catalogo.buscarProduto(produtos[2]?.id ?? '').quantidadeEstoque - 3 }] });
 servicos.vendas.registrar({ clienteId: clientes[1]?.id ?? '', formaPagamento: 'FATURADO', observacao: '', itens: [{ produtoId: produtos[9]?.id ?? '', quantidade: servicos.catalogo.buscarProduto(produtos[9]?.id ?? '').quantidadeEstoque }] });
 
+// Exemplo de venda por caixa: 2 caixas de trufas, uma com 12 e outra com 8 unidades, valor combinado.
+servicos.vendas.registrar({
+  clienteId: clientes[2]?.id ?? '',
+  formaPagamento: 'PIX',
+  observacao: 'Caixas para presente',
+  itens: [
+    { produtoId: produtos[1]?.id ?? '', formato: 'CAIXA', quantidade: 1, unidadesPorCaixa: 12, valorCentavos: 7000 },
+    { produtoId: produtos[3]?.id ?? '', formato: 'CAIXA', quantidade: 1, unidadesPorCaixa: 8, valorCentavos: 6000 },
+  ],
+});
+
 console.log(`Dados de demonstração criados: ${produtos.length} sabores, ${clientes.length} clientes.`);
