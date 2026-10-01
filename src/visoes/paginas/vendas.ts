@@ -43,7 +43,7 @@ export interface DadosFormularioVenda {
   readonly clientes: readonly Cliente[];
   readonly produtos: readonly ProdutoDetalhado[];
   /** Linhas já preenchidas (após erro de validação ou pré-seleção). */
-  readonly linhas: ReadonlyArray<{ produtoId: string; formato: string; quantidade: string; unidadesPorCaixa: string; valor: string }>;
+  readonly linhas: ReadonlyArray<{ produtoId: string; formato: string; quantidade: string; unidadesPorCaixa: string; baseValor: string; valor: string }>;
   readonly formulario: ContextoFormulario;
   readonly erroGeral?: string;
 }
@@ -66,7 +66,7 @@ export function paginaFormularioVenda(dados: DadosFormularioVenda): HtmlSeguro {
         ${campoSelecao(dados.formulario, { nome: 'formaPagamento', rotulo: 'Pagamento', obrigatorio: true, opcoes: FORMAS_PAGAMENTO.map((f) => ({ valor: f, rotulo: ROTULO_PAGAMENTO[f] })) })}
       </div>
       <h3 class="subtitulo-secao">Itens</h3>
-      <p class="subtitulo">Venda por <strong>unidade</strong> ou por <strong>caixa</strong> (informe quantas unidades vêm na caixa). O valor vem do cadastro, mas você pode alterar em cada item.</p>
+      <p class="subtitulo">Venda por <strong>unidade</strong> ou por <strong>caixa</strong> (informe quantas unidades vêm na caixa). Na caixa, você escolhe se digita o valor da caixa inteira ou o de cada unidade. O valor vem do cadastro, mas você pode alterar em cada item.</p>
       <div class="itens-venda" data-itens></div>
       <button type="button" class="botao botao--suave" data-adicionar-item>+ Adicionar item</button>
       ${campoAreaTexto(dados.formulario, { nome: 'observacao', rotulo: 'Observação', placeholder: 'Entrega, recado no cartão…' })}
