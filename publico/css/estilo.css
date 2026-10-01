@@ -328,3 +328,11 @@ textarea { resize: vertical; }
 .combo__lista .combo__vazio { color: var(--texto-suave); cursor: default; font-weight: 400; }
 .combo__lista .combo__vazio:hover { background: transparent; }
 .item-producao-linha { scroll-margin-top: 76px; }
+
+/* escolha UN x Caixa: dois botões lado a lado */
+.segmento { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.segmento button { display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 10px 8px; border-radius: 12px; border: 1.5px solid var(--linha); background: #fff; color: var(--chocolate); font: inherit; cursor: pointer; }
+.segmento button small { color: var(--texto-suave); font-size: .74rem; }
+.segmento button[aria-pressed='true'] { background: var(--caramelo-claro); border-color: var(--caramelo); }
+.segmento button[aria-pressed='true'] small { color: var(--chocolate-2); }
+button, .botao, .chip { -webkit-tap-highlight-color: transparent; }
