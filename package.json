@@ -1,0 +1,28 @@
+{
+  "name": "brasil-doces-do-vale",
+  "version": "1.0.0",
+  "description": "Mini ERP/CRM da doceria Brasil Doces do Vale",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:cliente": "tsc -p tsconfig.cliente.json",
+    "build": "tsc -p tsconfig.json && npm run build:cliente",
+    "dev": "npm run build:cliente && tsx watch src/servidor.ts",
+    "start": "node dist/servidor.js",
+    "demo": "tsx scripts/popular-demo.ts",
+    "verificar": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.cliente.json --noEmit",
+    "test": "tsx --test testes/*.teste.ts"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@types/express": "^5.0.6",
+    "express": "^5.2.1"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.3",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}
