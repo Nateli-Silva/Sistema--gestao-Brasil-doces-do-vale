@@ -169,3 +169,15 @@ test('função do Netlify: alteração simultânea é recusada sem perder dados'
   assert.equal(resposta.statusCode, 409);
   assert.match(loja.itens.get('dados.json')?.data ?? '', /outra-pessoa/); // o que a outra pessoa gravou continua lá
 });
+
+test('função do Netlify: espaços ou quebra de linha no fim da senha configurada não impedem o login', async () => {
+  const manipulador = criarManipulador(() => new LojaFalsa(), '  Brasil22@\n');
+  const entrada = await chamar(manipulador, 'POST', '/entrar', { corpo: { senha: 'Brasil22@', destino: '/' } });
+  assert.equal(entrada.statusCode, 303);
+  assert.match(entrada.cookie, /^sessao=/);
+  // senha digitada com espaço sobrando (teclado do celular) também funciona
+  const comEspaco = await chamar(manipulador, 'POST', '/entrar', { corpo: { senha: 'Brasil22@ ', destino: '/' } });
+  assert.equal(comEspaco.statusCode, 303);
+  const errada = await chamar(manipulador, 'POST', '/entrar', { corpo: { senha: 'brasil22@', destino: '/' } });
+  assert.equal(errada.statusCode, 401); // maiúsculas continuam importando
+});

@@ -59,7 +59,9 @@ function paraResposta(resultado: RespostaClassica): Response {
  */
 export function criarManipulador(obterLoja: () => LojaDeBlobs, senha: string | undefined) {
   // Em produção o sistema nunca fica aberto: sem senha configurada, nada é exibido.
-  const autenticacao = senha ? new Autenticacao(senha) : undefined;
+  // Espaços ou quebras de linha invisíveis (comuns ao colar a senha no painel) não fazem parte dela.
+  const senhaLimpa = senha?.trim();
+  const autenticacao = senhaLimpa ? new Autenticacao(senhaLimpa) : undefined;
   const diretorioPublico = path.resolve('publico');
 
   return async (req: Request): Promise<Response> => {
