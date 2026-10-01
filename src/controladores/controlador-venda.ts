@@ -36,7 +36,7 @@ export class ControladorVenda extends ControladorBase {
       'Vendas',
       paginaListaVendas({
         vendas: this.vendas.listar(),
-        clientes: new Map(this.clientes.listar().map((c) => [c.id, c])),
+        clientes: new Map(this.clientes.listar('', true).map((c) => [c.id, c])),
         indice: this.catalogo.indexarProdutos(),
       }),
     );
@@ -44,7 +44,7 @@ export class ControladorVenda extends ControladorBase {
 
   exibir = (req: Request, res: Response): void => {
     const venda = this.vendas.buscarPorId(String(req.params.id));
-    const cliente = this.clientes.listar().find((c) => c.id === venda.clienteId);
+    const cliente = this.clientes.listar('', true).find((c) => c.id === venda.clienteId);
     this.renderizar(req, res, 'Venda', paginaDetalheVenda({ venda, cliente, indice: this.catalogo.indexarProdutos() }));
   };
 

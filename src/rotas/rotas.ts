@@ -40,6 +40,8 @@ export function criarRotas(servicos: Servicos, comSenha: boolean): Router {
   rotas.get('/clientes/:id', clientes.exibir);
   rotas.get('/clientes/:id/editar', clientes.formularioEdicao);
   rotas.post('/clientes/:id', clientes.atualizar);
+  rotas.post('/clientes/:id/excluir', clientes.excluir);
+  rotas.post('/clientes/:id/arquivar', clientes.alternarArquivo);
 
   rotas.get('/faturamento', faturamento.exibir);
 

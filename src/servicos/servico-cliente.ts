@@ -1,4 +1,4 @@
-import { ErroDeValidacao, ErroNaoEncontrado } from '../dominio/erros.js';
+import { ErroDeNegocio, ErroDeValidacao, ErroNaoEncontrado } from '../dominio/erros.js';
 import type { Cliente, Endereco, NovaEntidade, TipoCliente } from '../dominio/tipos.js';
 import type { Repositorios } from '../repositorios/repositorios.js';
 import { validarCnpj, validarCpf, validarEmail } from '../utilitarios/documentos.js';
@@ -27,11 +27,13 @@ export class ServicoCliente {
     return ENDERECO_VAZIO;
   }
 
-  listar(busca = ''): Cliente[] {
+  /** Clientes ativos por padrão; `incluirArquivados` mostra também os arquivados. */
+  listar(busca = '', incluirArquivados = false): Cliente[] {
     const termo = busca.trim().toLocaleLowerCase('pt-BR');
     const termoDigitos = somenteDigitos(busca);
     return [...this.repos.clientes.listar()]
       .filter((c) => {
+        if (!incluirArquivados && !c.ativo) return false;
         if (!termo) return true;
         const textos = [c.nome, c.email, c.tipo === 'PJ' ? c.razaoSocial : ''].join(' ').toLocaleLowerCase('pt-BR');
         const documento = c.tipo === 'PF' ? c.cpf : c.cnpj;
@@ -54,7 +56,28 @@ export class ServicoCliente {
   atualizar(id: string, dados: DadosCliente): Cliente {
     const existente = this.buscarPorId(id);
     this.validar({ ...dados, tipo: existente.tipo }, id);
-    return this.repos.clientes.atualizar({ ...this.montar({ ...dados, tipo: existente.tipo }), id, criadoEm: existente.criadoEm });
+    return this.repos.clientes.atualizar({ ...this.montar({ ...dados, tipo: existente.tipo }), id, criadoEm: existente.criadoEm, ativo: existente.ativo });
+  }
+
+  /** Quantas compras o cliente já fez (define se pode ser excluído ou só arquivado). */
+  contarCompras(id: string): number {
+    return this.repos.vendas.listar().filter((v) => v.clienteId === id).length;
+  }
+
+  /** Exclui o cadastro de quem nunca comprou; quem já comprou só pode ser arquivado, para não perder o histórico. */
+  excluir(id: string): void {
+    const cliente = this.buscarPorId(id);
+    const compras = this.contarCompras(id);
+    if (compras > 0) {
+      throw new ErroDeNegocio(`${cliente.nome} já tem ${compras} ${compras === 1 ? 'compra registrada' : 'compras registradas'} e não pode ser excluído(a). Use "Arquivar" para tirar das buscas e manter o histórico.`);
+    }
+    this.repos.clientes.remover(id);
+  }
+
+  /** Arquiva ou reativa o cliente. */
+  alternarArquivo(id: string): Cliente {
+    const cliente = this.buscarPorId(id);
+    return this.repos.clientes.atualizar({ ...cliente, ativo: !cliente.ativo });
   }
 
   private montar(dados: DadosCliente): NovaEntidade<Cliente> {
@@ -67,9 +90,9 @@ export class ServicoCliente {
     const documento = somenteDigitos(dados.documento);
     const endereco = this.normalizarEndereco(dados.endereco);
     if (dados.tipo === 'PJ') {
-      return { ...base, tipo: 'PJ', cnpj: documento, razaoSocial: dados.razaoSocial.trim(), responsavel: dados.responsavel.trim(), endereco };
+      return { ...base, ativo: true, tipo: 'PJ', cnpj: documento, razaoSocial: dados.razaoSocial.trim(), responsavel: dados.responsavel.trim(), endereco };
     }
-    return { ...base, tipo: 'PF', cpf: documento, endereco: this.enderecoPreenchido(endereco) ? endereco : null };
+    return { ...base, ativo: true, tipo: 'PF', cpf: documento, endereco: this.enderecoPreenchido(endereco) ? endereco : null };
   }
 
   private normalizarEndereco(e: Endereco): Endereco {

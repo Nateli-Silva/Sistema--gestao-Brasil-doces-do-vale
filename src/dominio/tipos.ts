@@ -71,6 +71,8 @@ interface ClienteBase extends Entidade {
   readonly telefone: string;
   readonly email: string;
   readonly observacao: string;
+  /** Cliente arquivado some das buscas e de novas vendas, mas o histórico de compras é mantido. */
+  readonly ativo: boolean;
 }
 
 export interface ClientePessoaFisica extends ClienteBase {

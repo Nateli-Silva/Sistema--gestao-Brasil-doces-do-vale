@@ -118,7 +118,9 @@ export class ServicoVenda {
   /** Valida o pedido e calcula, por linha, as unidades que saem do estoque e o valor combinado. */
   private montarItens(dados: DadosVenda): ItemVenda[] {
     const erros: Record<string, string> = {};
-    if (!this.repos.clientes.buscarPorId(dados.clienteId)) erros.clienteId = 'Escolha o cliente.';
+    const cliente = this.repos.clientes.buscarPorId(dados.clienteId);
+    if (!cliente) erros.clienteId = 'Escolha o cliente.';
+    else if (!cliente.ativo) erros.clienteId = 'Este cliente está arquivado. Reative o cadastro para vender.';
     if (!(FORMAS_PAGAMENTO as readonly string[]).includes(dados.formaPagamento)) erros.formaPagamento = 'Escolha a forma de pagamento.';
     if (dados.itens.length === 0) erros.itens = 'Adicione ao menos um item à venda.';
 
