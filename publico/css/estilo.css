@@ -285,3 +285,26 @@ textarea { resize: vertical; }
 .grupo-producao__itens { display: flex; flex-direction: column; gap: 8px; }
 .grupo-producao > .botao { align-self: flex-start; }
 .item-producao-linha .botao { padding: 6px 0; font-size: 1.2rem; line-height: 1; }
+
+/* estoque por categoria */
+.chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px 6px 8px; border-radius: 99px; background: var(--creme); border: 1.5px solid var(--linha); text-decoration: none; font-weight: 600; font-size: .88rem; }
+.chip:first-child { padding-left: 14px; }
+.chip--ativo { background: var(--caramelo-claro); border-color: var(--caramelo); }
+.seletor-sabor { display: flex; flex-direction: column; gap: 5px; margin-bottom: 16px; max-width: 420px; }
+.seletor-sabor label { font-size: .82rem; font-weight: 600; color: var(--chocolate-2); }
+.detalhe-sabor { background: var(--creme); border: 1px solid var(--linha); border-radius: 16px; padding: 16px; margin-bottom: 18px; display: flex; flex-direction: column; gap: 12px; }
+.detalhe-sabor header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.detalhe-sabor header > div { flex: 1; min-width: 120px; }
+.detalhe-sabor h4 { margin: 4px 0 0; font-size: .78rem; text-transform: uppercase; letter-spacing: .07em; color: var(--texto-suave); }
+.numeros { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; }
+.numero { background: var(--papel); border: 1px solid var(--linha); border-radius: 14px; padding: 10px 12px; }
+.numero strong { display: block; font-family: var(--fonte-titulo); font-size: 1.6rem; line-height: 1.1; }
+.numero--destaque { background: var(--caramelo-claro); border-color: transparent; }
+.em-linha { display: inline; }
+.mini-cartao--link { text-decoration: none; display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
+.mini-cartao--link:hover { border-color: var(--caramelo); }
+.mini-cartao__valor { margin: 0; font-family: var(--fonte-titulo); font-size: 1.5rem; font-weight: 600; }
+.recolhivel { background: var(--papel); border: 1px solid var(--linha); border-radius: var(--raio); box-shadow: var(--sombra); padding: 14px 20px; }
+.recolhivel summary { cursor: pointer; font-family: var(--fonte-titulo); font-weight: 600; font-size: 1.1rem; }
+.recolhivel[open] summary { margin-bottom: 14px; }

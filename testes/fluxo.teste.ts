@@ -97,3 +97,15 @@ test('produção com o mesmo sabor em duas linhas é somada', () => {
   assert.equal(servicos.catalogo.buscarProduto(sabor.id).quantidadeEstoque, 12);
   assert.equal(servicos.producao.listarDoDia(hojeIso()).length, 1);
 });
+
+test('resumo do sabor mostra total produzido, vendido e lotes recentes', () => {
+  const { servicos, sabor, cliente } = novoCenario();
+  servicos.producao.registrar({ data: hojeIso(), observacao: 'lote 1', itens: [{ produtoId: sabor.id, quantidade: 40 }] });
+  servicos.producao.registrar({ data: hojeIso(), observacao: 'lote 2', itens: [{ produtoId: sabor.id, quantidade: 20 }] });
+  servicos.vendas.registrar({ clienteId: cliente.id, formaPagamento: 'PIX', observacao: '', itens: [{ produtoId: sabor.id, quantidade: 15 }] });
+  const resumo = servicos.estoque.resumirSabor(sabor.id);
+  assert.equal(resumo.produzido, 60);
+  assert.equal(resumo.vendido, 15);
+  assert.equal(resumo.ultimasProducoes[0]?.observacao, 'lote 2');
+  assert.equal(servicos.estoque.totalProduzidoPorSabor().get(sabor.id), 60);
+});

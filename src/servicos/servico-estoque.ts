@@ -1,10 +1,17 @@
 import { ErroDeNegocio } from '../dominio/erros.js';
-import type { MovimentoEstoque, Produto, TipoMovimento } from '../dominio/tipos.js';
+import type { MovimentoEstoque, Producao, Produto, TipoMovimento } from '../dominio/tipos.js';
 import type { Repositorios } from '../repositorios/repositorios.js';
 
 export interface PedidoMovimento {
   readonly produtoId: string;
   readonly quantidade: number;
+}
+
+/** Visão consolidada de um sabor: quanto foi produzido, vendido e o que há em estoque. */
+export interface ResumoSabor {
+  readonly produzido: number;
+  readonly vendido: number;
+  readonly ultimasProducoes: Producao[];
 }
 
 /** Único ponto que altera saldos de estoque; cada alteração gera um movimento auditável. */
@@ -17,6 +24,28 @@ export class ServicoEstoque {
       .listar()
       .filter((p) => p.ativo && p.quantidadeEstoque <= p.estoqueMinimo)
       .sort((a, b) => a.quantidadeEstoque - b.quantidadeEstoque);
+  }
+
+  /** Totais históricos de um sabor (produção e vendas) e seus lotes mais recentes. */
+  resumirSabor(produtoId: string, limiteLotes = 5): ResumoSabor {
+    const producoes = this.repos.producoes.listar().filter((p) => p.produtoId === produtoId);
+    const vendido = this.repos.vendas
+      .listar()
+      .flatMap((v) => v.itens)
+      .filter((i) => i.produtoId === produtoId)
+      .reduce((soma, i) => soma + i.quantidade, 0);
+    return {
+      produzido: producoes.reduce((soma, p) => soma + p.quantidade, 0),
+      vendido,
+      ultimasProducoes: [...producoes].reverse().slice(0, limiteLotes),
+    };
+  }
+
+  /** Total produzido por sabor, em uma única passada (usado nas listas por categoria). */
+  totalProduzidoPorSabor(): Map<string, number> {
+    const totais = new Map<string, number>();
+    for (const p of this.repos.producoes.listar()) totais.set(p.produtoId, (totais.get(p.produtoId) ?? 0) + p.quantidade);
+    return totais;
   }
 
   listarMovimentosRecentes(limite: number): MovimentoEstoque[] {
