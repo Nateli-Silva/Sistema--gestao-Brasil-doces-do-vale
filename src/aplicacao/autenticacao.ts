@@ -94,6 +94,12 @@ export class Autenticacao {
   }
 }
 
+/** IP do visitante (o Netlify informa em um cabeçalho próprio; senão usa o IP da conexão). */
+export function ipDe(req: Request): string {
+  const doNetlify = req.headers['x-nf-client-connection-ip'];
+  return (typeof doNetlify === 'string' ? doNetlify : undefined) ?? req.ip ?? '';
+}
+
 export function encerrarSessao(res: Response): void {
   res.clearCookie(NOME_COOKIE, { path: '/' });
 }

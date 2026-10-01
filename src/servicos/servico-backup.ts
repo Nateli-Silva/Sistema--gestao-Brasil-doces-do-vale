@@ -1,7 +1,6 @@
-import fs from 'node:fs';
-import path from 'node:path';
 import { ErroDeNegocio } from '../dominio/erros.js';
 import type { Categoria, Cliente, MovimentoEstoque, Producao, Produto, Venda } from '../dominio/tipos.js';
+import type { ArmazenamentoDados } from '../repositorios/armazenamento.js';
 import type { Repositorios } from '../repositorios/repositorios.js';
 
 /** Cópia de segurança de todos os dados do sistema em um único arquivo JSON. */
@@ -26,7 +25,7 @@ const COLECOES = ['categorias', 'produtos', 'movimentos', 'producoes', 'clientes
 export class ServicoBackup {
   constructor(
     private readonly repos: Repositorios,
-    private readonly diretorioDados: string,
+    private readonly armazenamento: ArmazenamentoDados,
   ) {}
 
   exportar(): CopiaDeSeguranca {
@@ -88,8 +87,7 @@ export class ServicoBackup {
   }
 
   private guardarCopiaAntes(): void {
-    fs.mkdirSync(this.diretorioDados, { recursive: true });
     const carimbo = new Date().toISOString().replace(/[:.]/g, '-');
-    fs.writeFileSync(path.join(this.diretorioDados, `copia-antes-da-restauracao-${carimbo}.json`), JSON.stringify(this.exportar()));
+    this.armazenamento.guardarCopia(`copia-antes-da-restauracao-${carimbo}.json`, JSON.stringify(this.exportar()));
   }
 }

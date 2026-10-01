@@ -145,3 +145,6 @@ vite.config.ts.timestamp-*
 # Brasil Doces do Vale
 dados/
 publico/js/
+
+# Local Netlify folder
+.netlify

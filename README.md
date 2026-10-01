@@ -38,33 +38,45 @@ scripts/ testes/    dados de demonstração e testes automatizados
 - PJ exige endereço comercial; CPF/CNPJ são validados e únicos.
 - Novos sabores podem ser cadastrados a qualquer momento no Catálogo.
 
-## Publicar na internet (Render)
+## Publicar na internet — Netlify (plano gratuito)
 
-O arquivo `render.yaml` já descreve tudo: servidor Node, **disco persistente** para os dados e deploy automático.
+O arquivo `netlify.toml` já descreve tudo: o site (estilo e scripts) fica estático e o sistema roda como uma função do Netlify. Os **dados ficam no Netlify Blobs** (armazenamento do próprio Netlify), então atualizar o site **não apaga nada** e todos os aparelhos enxergam os mesmos dados.
+
+1. Crie uma conta em <https://app.netlify.com> entrando com o GitHub (no plano gratuito não é preciso cartão).
+2. **Add new project → Import an existing project → GitHub** e escolha este repositório. As configurações de build vêm do `netlify.toml`.
+3. **Antes de confirmar**, em *Environment variables*, adicione `SENHA_ACESSO` com a senha que vocês usarão para entrar. (Depois também dá para mudar em *Project configuration → Environment variables*, refazendo o deploy.)
+4. Toque em **Deploy**. Quando terminar, o endereço aparece no topo (algo como `https://nome-aleatorio.netlify.app`). Para trocar o nome: *Project configuration → Change project name*.
+5. Abra o endereço, entre com a senha e use. Para levar dados de outro ambiente: em **Backup**, baixe a cópia lá e restaure aqui.
+
+### Atualizações
+
+Cada alteração aprovada no branch `main` é publicada sozinha. Os dados no Netlify Blobs são mantidos entre as atualizações.
+
+### Cuidados e limites
+
+- **Senha:** sem `SENHA_ACESSO` o site mostra apenas um aviso de configuração (nunca fica aberto).
+- **Backup:** baixe uma cópia em **Backup** com frequência. A restauração pelo navegador aceita arquivos de até ~6 MB (limite das funções do Netlify).
+- **Alterações ao mesmo tempo:** se duas pessoas salvarem exatamente juntas, a segunda vê o aviso "Tente de novo" e repete a ação; nada é perdido.
+- **Plano gratuito:** tem limite mensal de uso (confira em netlify.com/pricing). Para uma doceria pequena costuma bastar; se passar do limite, o site pode ser pausado até o mês seguinte.
+- A primeira abertura depois de um tempo parado pode levar alguns segundos.
+
+## Publicar na internet — Render (alternativa paga, com disco)
+
+O arquivo `render.yaml` descreve um servidor Node com **disco persistente** e deploy automático.
 
 1. Crie uma conta em <https://render.com> entrando com o GitHub e autorize o repositório.
 2. **New + → Blueprint** e escolha este repositório. O Render lê o `render.yaml`.
-3. Quando pedir **SENHA_ACESSO**, digite a senha que vocês usarão para entrar no sistema (não fica salva no código) e confirme com **Apply**. O plano com disco persistente é pago (em torno de US$ 7 por mês; confira em render.com/pricing).
-4. Aguarde o primeiro deploy terminar. O endereço aparece no topo do serviço (algo como `https://brasil-doces-do-vale.onrender.com`).
-5. Abra o endereço, entre com a senha e use normalmente. Para levar os dados de um computador/celular para lá: em **Backup**, baixe a cópia do ambiente antigo e restaure no novo.
+3. Quando pedir **SENHA_ACESSO**, digite a senha de entrada e confirme com **Apply**. O plano com disco persistente é pago (em torno de US$ 7 por mês; confira em render.com/pricing).
+4. Aguarde o primeiro deploy; o endereço aparece no topo do serviço.
 
-### Como ficam as atualizações
-
-Cada alteração aprovada no branch `main` é publicada sozinha em poucos minutos. Os dados ficam no disco persistente (`/var/data`) e **não** são apagados nas atualizações. Se algo falhar, veja **Logs** e **Events** do serviço no Render.
-
-### Cuidados
-
-- **Senha:** o sistema não inicia em produção sem `SENHA_ACESSO`. Para trocar a senha, mude a variável no Render (todas as sessões abertas são encerradas).
-- **Backup:** baixe uma cópia em **Backup** com frequência e guarde fora do sistema. Antes de restaurar, o sistema guarda uma cópia do que existia no próprio disco.
-- **Domínio próprio:** em *Settings → Custom Domains* do serviço.
-- Há apenas **uma instância** do serviço por causa do armazenamento em arquivos JSON; não aumente o número de instâncias.
+Cada merge no `main` publica sozinho; os dados ficam no disco (`/var/data`). Há apenas **uma instância** por causa do armazenamento em arquivos.
 
 ### Variáveis de ambiente
 
 | Variável | Para quê |
 |---|---|
-| `SENHA_ACESSO` | Senha de entrada (obrigatória em produção) |
-| `DIRETORIO_DADOS` | Pasta dos dados (`/var/data` no Render; `./dados` localmente) |
+| `SENHA_ACESSO` | Senha de entrada (obrigatória em produção, Netlify e Render) |
+| `DIRETORIO_DADOS` | Pasta dos dados em arquivos (`/var/data` no Render; `./dados` localmente) |
 | `PORT` / `PORTA` | Porta do servidor (o Render define `PORT`) |
 | `NODE_ENV` | `production` exige a senha para iniciar |
 

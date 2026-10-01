@@ -1,3 +1,4 @@
+import { ArmazenamentoEmArquivos, type ArmazenamentoDados } from '../repositorios/armazenamento.js';
 import { criarRepositorios, type Repositorios } from '../repositorios/repositorios.js';
 import { ServicoBackup } from '../servicos/servico-backup.js';
 import { ServicoCatalogo } from '../servicos/servico-catalogo.js';
@@ -21,8 +22,10 @@ export interface Servicos {
   readonly backup: ServicoBackup;
 }
 
-export function criarServicos(diretorioDados: string): Servicos {
-  const repositorios = criarRepositorios(diretorioDados);
+/** `origem` é uma pasta (dados em arquivos) ou qualquer armazenamento que implemente a interface. */
+export function criarServicos(origem: string | ArmazenamentoDados): Servicos {
+  const armazenamento = typeof origem === 'string' ? new ArmazenamentoEmArquivos(origem) : origem;
+  const repositorios = criarRepositorios(armazenamento);
   const catalogo = new ServicoCatalogo(repositorios);
   const estoque = new ServicoEstoque(repositorios);
   const producao = new ServicoProducao(repositorios, estoque);
@@ -30,6 +33,6 @@ export function criarServicos(diretorioDados: string): Servicos {
   const vendas = new ServicoVenda(repositorios, estoque);
   const faturamento = new ServicoFaturamento(repositorios);
   const painel = new ServicoPainel(repositorios, catalogo, estoque, producao, vendas, faturamento);
-  const backup = new ServicoBackup(repositorios, diretorioDados);
+  const backup = new ServicoBackup(repositorios, armazenamento);
   return { repositorios, catalogo, estoque, producao, clientes, vendas, painel, faturamento, backup };
 }
