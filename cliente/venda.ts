@@ -44,9 +44,12 @@ const LINHA_VAZIA: LinhaInicial = { produtoId: '', formato: 'UNIDADE', quantidad
 
 const MODELO_LINHA = `
   <div data-espaco-produto></div>
+  <div class="segmento" role="group" aria-label="Vender por">
+    <button type="button" data-formato="UNIDADE"><strong>UN</strong><small>valor unitário</small></button>
+    <button type="button" data-formato="CAIXA"><strong>Caixa</strong><small>valor da caixa</small></button>
+    <input type="hidden" name="formato" value="UNIDADE">
+  </div>
   <div class="item-venda__campos">
-    <label class="campo-mini"><span>Vender por</span>
-      <select name="formato"><option value="UNIDADE">Unidade</option><option value="CAIXA">Caixa</option></select></label>
     <label class="campo-mini"><span data-rotulo-quantidade>Quantidade</span>
       <input name="quantidade" type="number" min="1" step="1" inputmode="numeric"></label>
     <label class="campo-mini" data-so-caixa><span>Unidades por caixa</span>
@@ -80,7 +83,7 @@ function iniciar(formulario: HTMLFormElement): void {
   const unidadesDaLinha = (linha: HTMLElement): number => {
     const quantidade = Number(obter<HTMLInputElement>(linha, 'input[name=quantidade]').value) || 0;
     const porCaixa = Number(obter<HTMLInputElement>(linha, 'input[name=unidadesPorCaixa]').value) || 0;
-    return obter<HTMLSelectElement>(linha, 'select[name=formato]').value === 'CAIXA' ? quantidade * porCaixa : quantidade;
+    return obter<HTMLInputElement>(linha, 'input[name=formato]').value === 'CAIXA' ? quantidade * porCaixa : quantidade;
   };
 
   const recalcular = (): void => {
@@ -94,7 +97,7 @@ function iniciar(formulario: HTMLFormElement): void {
     let total = 0;
     linhas.forEach((linha) => {
       const produto = produtoPorId.get(obter<HTMLInputElement>(linha, 'input[name=produtoId]').value);
-      const ehCaixa = obter<HTMLSelectElement>(linha, 'select[name=formato]').value === 'CAIXA';
+      const ehCaixa = obter<HTMLInputElement>(linha, 'input[name=formato]').value === 'CAIXA';
       const quantidade = Number(obter<HTMLInputElement>(linha, 'input[name=quantidade]').value) || 0;
       const valor = paraCentavos(obter<HTMLInputElement>(linha, 'input[name=valor]').value);
       const unidades = unidadesDaLinha(linha);
@@ -120,7 +123,7 @@ function iniciar(formulario: HTMLFormElement): void {
     linha.dataset.linha = '';
     linha.innerHTML = MODELO_LINHA;
     const campo = (nome: string): HTMLInputElement => obter<HTMLInputElement>(linha, `[name=${nome}]`);
-    const formato = obter<HTMLSelectElement>(linha, 'select[name=formato]');
+    const formato = obter<HTMLInputElement>(linha, 'input[name=formato]');
     const valor = campo('valor');
     const base = obter<HTMLSelectElement>(linha, 'select[name=baseValor]');
     const quantidade = campo('quantidade');
@@ -139,6 +142,7 @@ function iniciar(formulario: HTMLFormElement): void {
     const ajustarFormato = (): void => {
       const ehCaixa = formato.value === 'CAIXA';
       linha.classList.toggle('item-venda--caixa', ehCaixa);
+      linha.querySelectorAll<HTMLButtonElement>('[data-formato]').forEach((botao) => botao.setAttribute('aria-pressed', String(botao.dataset.formato === formato.value)));
       obter<HTMLElement>(linha, '[data-rotulo-quantidade]').textContent = ehCaixa ? 'Nº de caixas' : 'Quantidade';
       obter<HTMLElement>(linha, '[data-rotulo-valor]').textContent = !ehCaixa || base.value === 'UNIDADE' ? 'Valor de cada unidade (R$)' : 'Valor da caixa (R$)';
       sugerirValor();
@@ -168,10 +172,13 @@ function iniciar(formulario: HTMLFormElement): void {
     combo.definir(inicial.produtoId);
     ajustarFormato();
 
-    formato.addEventListener('change', () => {
-      ajustarFormato();
-      recalcular();
-    });
+    linha.querySelectorAll<HTMLButtonElement>('[data-formato]').forEach((botao) =>
+      botao.addEventListener('click', () => {
+        formato.value = botao.dataset.formato === 'CAIXA' ? 'CAIXA' : 'UNIDADE';
+        ajustarFormato();
+        recalcular();
+      }),
+    );
     // Ao trocar entre "da caixa" e "de cada unidade", converte o valor já digitado.
     let baseAnterior = base.value;
     base.addEventListener('change', () => {
