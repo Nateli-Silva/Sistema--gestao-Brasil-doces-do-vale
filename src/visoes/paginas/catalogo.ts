@@ -11,8 +11,6 @@ function formularioNovoSabor(categorias: readonly Categoria[], contexto: Context
   <form method="post" action="/catalogo/sabores" class="formulario formulario--grade">
     ${campoSelecao(contexto, { nome: 'categoriaId', rotulo: 'Categoria', obrigatorio: true, vazio: 'Selecione…', opcoes: categorias.map((c) => ({ valor: c.id, rotulo: c.nome })) })}
     ${campoTexto(contexto, { nome: 'sabor', rotulo: 'Nome do sabor', obrigatorio: true, placeholder: 'Ex.: Maracujá com chocolate branco' })}
-    ${campoTexto(contexto, { nome: 'preco', rotulo: 'Valor por unidade (R$)', obrigatorio: true, placeholder: '0,00', atributos: 'inputmode="decimal"', ajuda: 'Valor sugerido na venda; você pode alterar em cada venda.' })}
-    ${campoTexto(contexto, { nome: 'estoqueMinimo', rotulo: 'Estoque mínimo', tipo: 'number', placeholder: '10', atributos: 'min="0" step="1"', ajuda: 'Abaixo disso o painel emite alerta.' })}
     <div class="formulario__acoes"><button class="botao botao--primario" type="submit">Cadastrar sabor</button></div>
   </form>`;
 }
@@ -25,7 +23,7 @@ function editorDoSabor({ produto, categoria }: ProdutoDetalhado): HtmlSeguro {
     <p class="subtitulo">Em estoque agora: <strong>${formatarInteiro(produto.quantidadeEstoque)} un.</strong></p>
     <form method="post" action="/catalogo/sabores/${produto.id}" class="linha-sabor__edicao">
       <label class="linha-sabor__campo linha-sabor__campo--nome"><span>Nome do sabor</span><input name="sabor" value="${produto.sabor}" required></label>
-      <label class="linha-sabor__campo"><span>Valor por unidade (R$)</span><input name="preco" value="${centavosParaCampo(produto.precoCentavos)}" inputmode="decimal" required></label>
+      <label class="linha-sabor__campo"><span>Valor sugerido (R$)</span><input name="preco" value="${produto.precoCentavos > 0 ? centavosParaCampo(produto.precoCentavos) : ''}" inputmode="decimal" placeholder="opcional"></label>
       <label class="linha-sabor__campo"><span>Estoque mínimo</span><input name="estoqueMinimo" type="number" min="0" value="${produto.estoqueMinimo}" required></label>
       <button class="botao botao--primario botao--pequeno" type="submit">Salvar</button>
     </form>
@@ -41,7 +39,7 @@ function listaDaCategoria(itens: readonly ProdutoDetalhado[]): HtmlSeguro {
   if (itens.length === 0) return estadoVazio('Nenhum sabor cadastrado nesta categoria.');
   return html`<ul class="lista-toque">${itens.map(({ produto }) => html`<li><a href="/catalogo?sabor=${produto.id}">
     <span>${produto.sabor}${produto.ativo ? '' : selo('Inativo', 'neutro')}</span>
-    <small>${formatarMoeda(produto.precoCentavos)} · ${formatarInteiro(produto.quantidadeEstoque)} em estoque</small></a></li>`)}</ul>`;
+    <small>${produto.precoCentavos > 0 ? `${formatarMoeda(produto.precoCentavos)} · ` : ''}${formatarInteiro(produto.quantidadeEstoque)} em estoque</small></a></li>`)}</ul>`;
 }
 
 /** Visão geral: um cartão por categoria, sem listar todos os sabores. */

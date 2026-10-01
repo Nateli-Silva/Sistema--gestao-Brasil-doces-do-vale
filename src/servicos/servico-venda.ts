@@ -137,7 +137,7 @@ export class ServicoVenda {
       } else {
         const item = this.calcularItem(pedido, formato as FormatoVenda, produto.precoCentavos);
         if (item) itens.push(item);
-        else erros.itens = 'Confira as unidades por caixa e o valor de cada item (maiores que zero).';
+        else erros.itens = 'Informe o valor de cada item e, nas caixas, as unidades por caixa.';
       }
     }
     if (Object.keys(erros).length > 0) throw new ErroDeValidacao(erros);

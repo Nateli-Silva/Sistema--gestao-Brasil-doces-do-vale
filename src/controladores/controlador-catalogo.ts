@@ -23,8 +23,6 @@ export class ControladorCatalogo extends ControladorBase {
       const novo = this.catalogo.cadastrarSabor({
         categoriaId: texto(campos, 'categoriaId'),
         sabor: texto(campos, 'sabor'),
-        precoCentavos: converterParaCentavos(texto(campos, 'preco')),
-        estoqueMinimo: texto(campos, 'estoqueMinimo') === '' ? 10 : inteiro(texto(campos, 'estoqueMinimo')),
       });
       this.redirecionar(res, `/catalogo?sabor=${novo.id}`, 'Sabor cadastrado com sucesso.');
     } catch (erro) {
@@ -40,7 +38,8 @@ export class ControladorCatalogo extends ControladorBase {
     try {
       this.catalogo.atualizarProduto(id, {
         sabor: texto(campos, 'sabor'),
-        precoCentavos: converterParaCentavos(texto(campos, 'preco')),
+        // Valor em branco = sem valor sugerido (definido em cada venda).
+        precoCentavos: texto(campos, 'preco') === '' ? 0 : converterParaCentavos(texto(campos, 'preco')),
         estoqueMinimo: inteiro(texto(campos, 'estoqueMinimo')),
       });
       this.redirecionar(res, `/catalogo?sabor=${id}`, 'Sabor atualizado.');

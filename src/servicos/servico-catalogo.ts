@@ -11,9 +11,22 @@ const CATEGORIAS_INICIAIS: ReadonlyArray<{ chave: ChaveCategoria; nome: string }
   { chave: 'brigadeiros', nome: 'Brigadeiros' },
 ];
 
+/** Estoque mínimo inicial de um sabor novo; pode ser alterado depois na edição do sabor. */
+const ESTOQUE_MINIMO_PADRAO = 10;
+
+/** Cadastro rápido: categoria e nome. Valor e estoque mínimo são opcionais (o valor é definido na venda). */
 export interface DadosNovoSabor {
   readonly categoriaId: string;
   readonly sabor: string;
+  /** Valor sugerido por unidade em centavos; 0 = sem valor sugerido. */
+  readonly precoCentavos?: number;
+  readonly estoqueMinimo?: number;
+}
+
+/** Edição completa de um sabor já cadastrado. */
+export interface DadosEdicaoSabor {
+  readonly sabor: string;
+  /** 0 = sem valor sugerido (informado em cada venda). */
   readonly precoCentavos: number;
   readonly estoqueMinimo: number;
 }
@@ -66,13 +79,20 @@ export class ServicoCatalogo {
 
   cadastrarSabor(dados: DadosNovoSabor): Produto {
     this.validarSabor(dados);
-    return this.repos.produtos.inserir({ ...dados, sabor: dados.sabor.trim(), quantidadeEstoque: 0, ativo: true });
+    return this.repos.produtos.inserir({
+      categoriaId: dados.categoriaId,
+      sabor: dados.sabor.trim(),
+      precoCentavos: dados.precoCentavos ?? 0,
+      estoqueMinimo: dados.estoqueMinimo ?? ESTOQUE_MINIMO_PADRAO,
+      quantidadeEstoque: 0,
+      ativo: true,
+    });
   }
 
   /** Edita nome do sabor, preço e estoque mínimo (a categoria não muda). */
-  atualizarProduto(id: string, dados: Pick<DadosNovoSabor, 'sabor' | 'precoCentavos' | 'estoqueMinimo'>): Produto {
+  atualizarProduto(id: string, dados: DadosEdicaoSabor): Produto {
     const produto = this.buscarProduto(id);
-    const erros: Record<string, string> = { ...this.errosNumericos(dados) };
+    const erros: Record<string, string> = { ...this.errosNumericos(dados.precoCentavos, dados.estoqueMinimo) };
     if (dados.sabor.trim().length < 2) erros.sabor = 'Informe o nome do sabor.';
     else if (this.saborJaExiste(produto.categoriaId, dados.sabor, id)) erros.sabor = 'Este sabor já existe nesta categoria.';
     if (Object.keys(erros).length > 0) throw new ErroDeValidacao(erros);
@@ -103,17 +123,17 @@ export class ServicoCatalogo {
   }
 
   private validarSabor(dados: DadosNovoSabor): void {
-    const erros: Record<string, string> = { ...this.errosNumericos(dados) };
+    const erros: Record<string, string> = { ...this.errosNumericos(dados.precoCentavos ?? 0, dados.estoqueMinimo ?? ESTOQUE_MINIMO_PADRAO) };
     if (!this.repos.categorias.buscarPorId(dados.categoriaId)) erros.categoriaId = 'Escolha uma categoria.';
     if (dados.sabor.trim().length < 2) erros.sabor = 'Informe o nome do sabor.';
     else if (this.saborJaExiste(dados.categoriaId, dados.sabor)) erros.sabor = 'Este sabor já existe nesta categoria.';
     if (Object.keys(erros).length > 0) throw new ErroDeValidacao(erros);
   }
 
-  private errosNumericos(dados: Pick<DadosNovoSabor, 'precoCentavos' | 'estoqueMinimo'>): ErrosPorCampo {
+  private errosNumericos(precoCentavos: number, estoqueMinimo: number): ErrosPorCampo {
     const erros: Record<string, string> = {};
-    if (!Number.isFinite(dados.precoCentavos) || dados.precoCentavos <= 0) erros.preco = 'Informe um preço válido.';
-    if (!Number.isInteger(dados.estoqueMinimo) || dados.estoqueMinimo < 0) erros.estoqueMinimo = 'Informe um número inteiro.';
+    if (!Number.isFinite(precoCentavos) || precoCentavos < 0) erros.preco = 'Informe um valor válido (ou deixe em branco).';
+    if (!Number.isInteger(estoqueMinimo) || estoqueMinimo < 0) erros.estoqueMinimo = 'Informe um número inteiro.';
     return erros;
   }
 
