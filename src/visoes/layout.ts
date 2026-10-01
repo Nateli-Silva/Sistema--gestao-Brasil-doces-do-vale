@@ -4,14 +4,14 @@ import { iconeInterface, logotipo, type NomeIconeInterface } from './componentes
 
 export type SecaoMenu = 'painel' | 'vendas' | 'faturamento' | 'producao' | 'estoque' | 'clientes' | 'catalogo';
 
-const ITENS_MENU: ReadonlyArray<{ secao: SecaoMenu; rotulo: string; href: string; icone: NomeIconeInterface }> = [
-  { secao: 'painel', rotulo: 'Painel', href: '/', icone: 'painel' },
-  { secao: 'vendas', rotulo: 'Vendas', href: '/vendas', icone: 'vendas' },
-  { secao: 'faturamento', rotulo: 'Faturamento', href: '/faturamento', icone: 'moeda' },
-  { secao: 'producao', rotulo: 'Produção', href: '/producao', icone: 'producao' },
-  { secao: 'estoque', rotulo: 'Estoque', href: '/estoque', icone: 'estoque' },
-  { secao: 'clientes', rotulo: 'Clientes', href: '/clientes', icone: 'clientes' },
-  { secao: 'catalogo', rotulo: 'Catálogo', href: '/catalogo', icone: 'catalogo' },
+const ITENS_MENU: ReadonlyArray<{ secao: SecaoMenu; rotulo: string; rotuloCurto: string; href: string; icone: NomeIconeInterface }> = [
+  { secao: 'painel', rotulo: 'Painel', rotuloCurto: 'Painel', href: '/', icone: 'painel' },
+  { secao: 'vendas', rotulo: 'Vendas', rotuloCurto: 'Vendas', href: '/vendas', icone: 'vendas' },
+  { secao: 'faturamento', rotulo: 'Faturamento', rotuloCurto: 'Faturam.', href: '/faturamento', icone: 'moeda' },
+  { secao: 'producao', rotulo: 'Produção', rotuloCurto: 'Produção', href: '/producao', icone: 'producao' },
+  { secao: 'estoque', rotulo: 'Estoque', rotuloCurto: 'Estoque', href: '/estoque', icone: 'estoque' },
+  { secao: 'clientes', rotulo: 'Clientes', rotuloCurto: 'Clientes', href: '/clientes', icone: 'clientes' },
+  { secao: 'catalogo', rotulo: 'Catálogo', rotuloCurto: 'Catálogo', href: '/catalogo', icone: 'catalogo' },
 ];
 
 export interface DadosPagina {
@@ -44,7 +44,7 @@ export function paginaSimples(titulo: string, conteudo: Interpolavel): string {
 /** Estrutura comum: barra lateral no computador e barra inferior no celular. */
 export function paginaCompleta(dados: DadosPagina): string {
   const menu = (classe: string): HtmlSeguro => html`<nav class="${classe}" aria-label="Navegação principal">
-    ${ITENS_MENU.map((item) => html`<a href="${item.href}" class="menu__item ${item.secao === dados.secao ? 'menu__item--ativo' : ''}" ${item.secao === dados.secao ? 'aria-current="page"' : ''}>${iconeInterface(item.icone, 22)}<span>${item.rotulo}</span></a>`)}
+    ${ITENS_MENU.map((item) => html`<a href="${item.href}" class="menu__item ${item.secao === dados.secao ? 'menu__item--ativo' : ''}" ${item.secao === dados.secao ? 'aria-current="page"' : ''}>${iconeInterface(item.icone, 22)}<span class="menu__rotulo">${item.rotulo}</span><span class="menu__rotulo menu__rotulo--curto">${item.rotuloCurto}</span></a>`)}
   </nav>`;
 
   return `<!doctype html>${html`<html lang="pt-BR">

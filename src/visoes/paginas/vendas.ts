@@ -25,14 +25,14 @@ export interface DadosListaVendas {
 export function paginaListaVendas({ vendas, clientes, indice }: DadosListaVendas): HtmlSeguro {
   const tabela = vendas.length === 0
     ? estadoVazio('Nenhuma venda registrada ainda.', botao('Registrar a primeira venda', '/vendas/nova', { icone: 'mais' }))
-    : html`<div class="tabela-rolavel"><table class="tabela">
+    : html`<div class="tabela-rolavel"><table class="tabela tabela--cartoes">
       <thead><tr><th>Data</th><th>Cliente</th><th>Itens</th><th>Pagamento</th><th class="num">Total</th></tr></thead>
       <tbody>${vendas.map((v) => html`<tr>
-        <td><a href="/vendas/${v.id}">${formatarDataHora(v.data)}</a></td>
-        <td>${clientes.has(v.clienteId) ? html`<a href="/clientes/${v.clienteId}">${clientes.get(v.clienteId)?.nome}</a>` : '—'}</td>
-        <td>${v.itens.map((i) => html`<span class="ficha">${indice.get(i.produtoId)?.produto.sabor ?? '—'} · ${descricaoItem(i)}</span>`)}</td>
-        <td>${selo(ROTULO_PAGAMENTO[v.formaPagamento], 'neutro')}</td>
-        <td class="num"><strong>${formatarMoeda(v.totalCentavos)}</strong></td>
+        <td data-rotulo="Data"><a href="/vendas/${v.id}">${formatarDataHora(v.data)}</a></td>
+        <td data-rotulo="Cliente">${clientes.has(v.clienteId) ? html`<a href="/clientes/${v.clienteId}">${clientes.get(v.clienteId)?.nome}</a>` : '—'}</td>
+        <td data-rotulo="Itens">${v.itens.map((i) => html`<span class="ficha">${indice.get(i.produtoId)?.produto.sabor ?? '—'} · ${descricaoItem(i)}</span>`)}</td>
+        <td data-rotulo="Pagamento">${selo(ROTULO_PAGAMENTO[v.formaPagamento], 'neutro')}</td>
+        <td class="num" data-rotulo="Total"><strong>${formatarMoeda(v.totalCentavos)}</strong></td>
       </tr>`)}</tbody></table></div>`;
   return html`${cabecalhoPagina('Vendas', 'Todas as vendas, da mais recente para a mais antiga.', botao('Nova venda', '/vendas/nova', { icone: 'mais' }))}${cartao('Histórico de vendas', tabela)}`;
 }
@@ -101,16 +101,16 @@ export interface DadosDetalheVenda {
 }
 
 export function paginaDetalheVenda({ venda, cliente, indice }: DadosDetalheVenda): HtmlSeguro {
-  const itens = html`<div class="tabela-rolavel"><table class="tabela">
+  const itens = html`<div class="tabela-rolavel"><table class="tabela tabela--cartoes">
     <thead><tr><th>Produto</th><th>Vendido</th><th class="num">Valor</th></tr></thead>
     <tbody>${venda.itens.map((i) => {
       const detalhe = indice.get(i.produtoId);
       return html`<tr>
-        <td>${detalhe ? html`<span class="celula-produto">${bolhaCategoria(detalhe.categoria, 28)}<span>${detalhe.produto.sabor}<small>${detalhe.categoria.nome}</small></span></span>` : '—'}</td>
-        <td>${descricaoItem(i)}${i.formato === 'CAIXA' ? html`<small>= ${formatarInteiro(i.quantidade)} unidades</small>` : ''}</td>
-        <td class="num"><strong>${formatarMoeda(i.subtotalCentavos)}</strong></td></tr>`;
+        <td data-rotulo="Produto">${detalhe ? html`<span class="celula-produto">${bolhaCategoria(detalhe.categoria, 28)}<span>${detalhe.produto.sabor}<small>${detalhe.categoria.nome}</small></span></span>` : '—'}</td>
+        <td data-rotulo="Vendido">${descricaoItem(i)}${i.formato === 'CAIXA' ? html`<small>= ${formatarInteiro(i.quantidade)} unidades</small>` : ''}</td>
+        <td class="num" data-rotulo="Valor"><strong>${formatarMoeda(i.subtotalCentavos)}</strong></td></tr>`;
     })}</tbody>
-    <tfoot><tr><td colspan="2">Total</td><td class="num"><strong>${formatarMoeda(venda.totalCentavos)}</strong></td></tr></tfoot></table></div>`;
+    <tfoot><tr><td colspan="2">Total</td><td class="num" data-rotulo="Valor"><strong>${formatarMoeda(venda.totalCentavos)}</strong></td></tr></tfoot></table></div>`;
   return html`${cabecalhoPagina('Venda', formatarDataHora(venda.data), botao('Voltar às vendas', '/vendas', { variante: 'suave' }))}
   <div class="grade grade--duas">
     ${cartao('Itens', itens)}

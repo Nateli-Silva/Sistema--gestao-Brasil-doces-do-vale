@@ -70,13 +70,13 @@ function cartoesDePeriodo(dados: DadosPaginaFaturamento): HtmlSeguro {
 function tabelaDaSerie(dados: DadosPaginaFaturamento): HtmlSeguro {
   // Meses seguem o calendário (jan→dez); os demais mostram o mais recente primeiro.
   const linhas = dados.selecionado === 'mes' ? dados.serie : [...dados.serie].reverse();
-  return html`<div class="tabela-rolavel"><table class="tabela">
+  return html`<div class="tabela-rolavel"><table class="tabela tabela--cartoes">
     <thead><tr><th>Período</th><th class="num">Vendas</th><th class="num">Ticket médio</th><th class="num">Faturamento</th></tr></thead>
     <tbody>${linhas.map((p) => html`<tr class="${p.atual ? 'linha-atual' : ''}">
-      <td>${descreverPeriodo(dados.selecionado, p.periodo)} ${p.atual ? selo('atual', 'rosa') : ''}</td>
-      <td class="num">${formatarInteiro(p.vendas)}</td>
-      <td class="num">${p.vendas > 0 ? formatarMoeda(Math.round(p.totalCentavos / p.vendas)) : '—'}</td>
-      <td class="num"><strong>${formatarMoeda(p.totalCentavos)}</strong></td>
+      <td data-rotulo="Período">${descreverPeriodo(dados.selecionado, p.periodo)} ${p.atual ? selo('atual', 'rosa') : ''}</td>
+      <td class="num" data-rotulo="Vendas">${formatarInteiro(p.vendas)}</td>
+      <td class="num" data-rotulo="Ticket médio">${p.vendas > 0 ? formatarMoeda(Math.round(p.totalCentavos / p.vendas)) : '—'}</td>
+      <td class="num" data-rotulo="Faturamento"><strong>${formatarMoeda(p.totalCentavos)}</strong></td>
     </tr>`)}</tbody></table></div>`;
 }
 

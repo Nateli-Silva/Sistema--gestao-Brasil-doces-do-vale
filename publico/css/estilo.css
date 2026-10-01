@@ -377,3 +377,36 @@ button, .botao, .chip { -webkit-tap-highlight-color: transparent; }
 .lateral .conta { margin-top: 10px; color: #e8d5c8; }
 .topo-movel { align-items: center; justify-content: space-between; gap: 12px; }
 .topo-movel .conta { color: var(--creme); font-size: .8rem; }
+
+/* ---------- celular: tabelas viram cartões (tudo visível, sem rolar para o lado) ---------- */
+@media (max-width: 700px) {
+  .tabela-rolavel { overflow: visible; margin: 0; padding: 0; }
+  .tabela--cartoes, .tabela--cartoes tbody, .tabela--cartoes tfoot, .tabela--cartoes tr, .tabela--cartoes td { display: block; width: 100%; }
+  .tabela--cartoes thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .tabela--cartoes tr { border: 1px solid var(--linha); border-radius: 14px; padding: 6px 14px; margin-bottom: 10px; background: #fff; }
+  .tabela--cartoes tbody tr:hover { background: #fff; }
+  .tabela--cartoes td { position: relative; padding: 8px 0 8px 42%; min-height: 36px; border: 0; border-bottom: 1px dashed var(--linha); text-align: left; overflow-wrap: anywhere; }
+  .tabela--cartoes tbody tr:last-child td { border-bottom: 1px dashed var(--linha); }
+  .tabela--cartoes tr > td:last-child, .tabela--cartoes tbody tr:last-child > td:last-child { border-bottom: 0; }
+  .tabela--cartoes td::before { content: attr(data-rotulo); position: absolute; left: 0; top: 9px; width: 38%; font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--texto-suave); }
+  /* a primeira célula é o "título" do cartão */
+  .tabela--cartoes td:first-child, .tabela--cartoes tbody tr:last-child > td:first-child { padding-left: 0; font-weight: 700; border-bottom: 1px solid var(--linha); }
+  .tabela--cartoes td:first-child::before { content: none; }
+  .tabela--cartoes td.num { text-align: left; }
+  .tabela--cartoes tfoot tr { background: var(--caramelo-claro); border-color: transparent; }
+  .tabela--cartoes .celula-produto, .tabela--cartoes .celula-cliente { text-align: left; }
+}
+
+/* menu de baixo: rótulos curtos para caber 7 itens em telas de 360px */
+.menu__rotulo--curto { display: none; }
+@media (max-width: 860px) {
+  .menu--inferior { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+  .menu--inferior .menu__item { min-width: 0; padding-left: 0; padding-right: 0; text-align: center; }
+  .menu--inferior .menu__rotulo { display: none; }
+  .menu--inferior .menu__rotulo--curto { display: inline; }
+}
+@media (max-width: 700px) {
+  /* chips longos (ex.: "Doce de Leite Tradicional · 2 un.") quebram de linha em vez de estourar a tela */
+  .ficha { white-space: normal; max-width: 100%; }
+}
+.doc { white-space: nowrap; }
