@@ -34,6 +34,7 @@ export class ControladorEstoque extends ControladorBase {
         movimentos: this.estoque.listarMovimentosRecentes(8),
         indice: this.catalogo.indexarProdutos(),
       }),
+      ['/js/busca-sabor.js'],
     );
   };
 }

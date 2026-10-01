@@ -2,6 +2,7 @@ import type { Categoria, MovimentoEstoque } from '../../dominio/tipos.js';
 import type { ProdutoDetalhado } from '../../servicos/servico-catalogo.js';
 import type { ResumoSabor } from '../../servicos/servico-estoque.js';
 import { formatarData, formatarDataHora, formatarInteiro } from '../../utilitarios/formatacao.js';
+import { buscaSabor, seletorDeCategorias } from '../componentes/navegacao-sabores.js';
 import { barraEstoque, bolhaCategoria, botao, cabecalhoPagina, cartao, estadoVazio, indicador, selo, seloEstoque } from '../componentes/interface.js';
 import { html, type HtmlSeguro } from '../html.js';
 
@@ -19,27 +20,6 @@ export interface DadosPaginaEstoque {
 const ROTULO_MOVIMENTO = { PRODUCAO: 'Produção', VENDA: 'Venda', AJUSTE: 'Ajuste' } as const;
 
 const emAlerta = ({ produto }: ProdutoDetalhado): boolean => produto.quantidadeEstoque <= produto.estoqueMinimo;
-
-/** Atalhos de categoria: filtram a página sem precisar rolar por todos os sabores. */
-function seletorDeCategorias(dados: DadosPaginaEstoque): HtmlSeguro {
-  return html`<nav class="chips" aria-label="Categorias">
-    <a class="chip ${dados.categoriaSelecionada ? '' : 'chip--ativo'}" href="/estoque">Todas</a>
-    ${dados.categorias.map((c) => html`<a class="chip ${c.id === dados.categoriaSelecionada?.id ? 'chip--ativo' : ''}" href="/estoque?categoria=${c.id}">${bolhaCategoria(c, 22)}${c.nome}</a>`)}
-  </nav>`;
-}
-
-/** Escolha do sabor dentro da categoria; envia o formulário ao trocar a opção. */
-function seletorDeSabor(dados: DadosPaginaEstoque, daCategoria: readonly ProdutoDetalhado[]): HtmlSeguro {
-  return html`<form method="get" action="/estoque" class="seletor-sabor">
-    <input type="hidden" name="categoria" value="${dados.categoriaSelecionada?.id ?? ''}">
-    <label for="sabor">Consultar um sabor</label>
-    <select id="sabor" name="sabor" onchange="this.form.submit()">
-      <option value="">Escolha o sabor…</option>
-      ${daCategoria.map(({ produto }) => html`<option value="${produto.id}" ${produto.id === dados.saborSelecionado?.produto.id ? 'selected' : ''}>${produto.sabor}</option>`)}
-    </select>
-    <noscript><button class="botao botao--suave" type="submit">Ver</button></noscript>
-  </form>`;
-}
 
 function detalheDoSabor({ produto, categoria }: ProdutoDetalhado, resumo: ResumoSabor): HtmlSeguro {
   const numero = (rotulo: string, valor: number, destaque = false): HtmlSeguro =>
@@ -101,8 +81,10 @@ export function paginaEstoque(dados: DadosPaginaEstoque): HtmlSeguro {
     ? dados.produtos.filter((p) => p.categoria.id === dados.categoriaSelecionada?.id)
     : [];
 
-  const consulta = html`${seletorDeCategorias(dados)}
-    ${dados.categoriaSelecionada ? seletorDeSabor(dados, daCategoria) : ''}
+  // A busca procura só na categoria escolhida; sem categoria, procura em todos os sabores.
+  const pesquisaveis = dados.categoriaSelecionada ? daCategoria : dados.produtos;
+  const consulta = html`${buscaSabor({ urlBase: '/estoque', produtos: pesquisaveis, selecionado: dados.saborSelecionado, detalhe: (i) => `${i.categoria.nome} · ${formatarInteiro(i.produto.quantidadeEstoque)} em estoque` })}
+    ${seletorDeCategorias(dados.categorias, dados.categoriaSelecionada?.id, '/estoque')}
     ${dados.saborSelecionado && dados.resumoSabor ? detalheDoSabor(dados.saborSelecionado, dados.resumoSabor) : ''}
     ${dados.categoriaSelecionada ? listaDaCategoria(dados, daCategoria) : resumoPorCategoria(dados)}`;
 
