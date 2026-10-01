@@ -16,9 +16,15 @@ export class RepositorioJson<T extends Entidade> {
    */
   constructor(
     private readonly arquivo: string,
-    normalizar: (registro: T) => T = (registro) => registro,
+    private readonly normalizar: (registro: T) => T = (registro) => registro,
   ) {
-    this.itens = this.carregar().map(normalizar);
+    this.itens = this.carregar().map(this.normalizar);
+  }
+
+  /** Troca todo o conteúdo (usado na restauração de cópias de segurança). */
+  substituirTudo(itens: readonly T[]): void {
+    this.itens = itens.map(this.normalizar);
+    this.persistir();
   }
 
   listar(): readonly T[] {

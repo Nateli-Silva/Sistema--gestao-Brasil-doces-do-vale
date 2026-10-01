@@ -1,4 +1,5 @@
 import { criarRepositorios, type Repositorios } from '../repositorios/repositorios.js';
+import { ServicoBackup } from '../servicos/servico-backup.js';
 import { ServicoCatalogo } from '../servicos/servico-catalogo.js';
 import { ServicoCliente } from '../servicos/servico-cliente.js';
 import { ServicoFaturamento } from '../servicos/servico-faturamento.js';
@@ -17,6 +18,7 @@ export interface Servicos {
   readonly vendas: ServicoVenda;
   readonly painel: ServicoPainel;
   readonly faturamento: ServicoFaturamento;
+  readonly backup: ServicoBackup;
 }
 
 export function criarServicos(diretorioDados: string): Servicos {
@@ -28,5 +30,6 @@ export function criarServicos(diretorioDados: string): Servicos {
   const vendas = new ServicoVenda(repositorios, estoque);
   const faturamento = new ServicoFaturamento(repositorios);
   const painel = new ServicoPainel(repositorios, catalogo, estoque, producao, vendas, faturamento);
-  return { repositorios, catalogo, estoque, producao, clientes, vendas, painel, faturamento };
+  const backup = new ServicoBackup(repositorios, diretorioDados);
+  return { repositorios, catalogo, estoque, producao, clientes, vendas, painel, faturamento, backup };
 }

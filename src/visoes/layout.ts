@@ -23,6 +23,24 @@ export interface DadosPagina {
   readonly scripts?: readonly string[];
 }
 
+/** Atalhos de conta: cópia de segurança e saída. */
+function linksDeConta(): HtmlSeguro {
+  return html`<div class="conta"><a href="/backup">Backup</a><form method="post" action="/sair"><button type="submit">Sair</button></form></div>`;
+}
+
+/** Página sem menu (ex.: tela de entrada). */
+export function paginaSimples(titulo: string, conteudo: Interpolavel): string {
+  return `<!doctype html>${html`<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>${titulo} · Brasil Doces do Vale</title>
+  <link rel="stylesheet" href="/css/estilo.css">
+</head>
+<body class="pagina-simples">${conteudo}</body>
+</html>`.valor}`;
+}
+
 /** Estrutura comum: barra lateral no computador e barra inferior no celular. */
 export function paginaCompleta(dados: DadosPagina): string {
   const menu = (classe: string): HtmlSeguro => html`<nav class="${classe}" aria-label="Navegação principal">
@@ -41,9 +59,9 @@ export function paginaCompleta(dados: DadosPagina): string {
     <aside class="lateral">
       <a class="marca" href="/">${logotipo(40)}<span class="marca__texto"><strong>Brasil Doces</strong><small>do Vale · gestão</small></span></a>
       ${menu('menu menu--lateral')}
-      <p class="lateral__rodape">Feito com carinho<br>e muito chocolate</p>
+      <div class="lateral__rodape"><p>Feito com carinho<br>e muito chocolate</p>${linksDeConta()}</div>
     </aside>
-    <header class="topo-movel"><a class="marca" href="/">${logotipo(32)}<span class="marca__texto"><strong>Brasil Doces do Vale</strong></span></a></header>
+    <header class="topo-movel"><a class="marca" href="/">${logotipo(32)}<span class="marca__texto"><strong>Brasil Doces do Vale</strong></span></a>${linksDeConta()}</header>
     <main class="pagina">
       ${dados.aviso ? alerta(dados.aviso, 'sucesso') : ''}
       ${dados.conteudo}

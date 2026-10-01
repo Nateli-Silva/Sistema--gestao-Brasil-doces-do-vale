@@ -1,5 +1,6 @@
-import { Router } from 'express';
+import express, { Router } from 'express';
 import type { Servicos } from '../aplicacao/container.js';
+import { ControladorBackup } from '../controladores/controlador-backup.js';
 import { ControladorCatalogo } from '../controladores/controlador-catalogo.js';
 import { ControladorCliente } from '../controladores/controlador-cliente.js';
 import { ControladorFaturamento } from '../controladores/controlador-faturamento.js';
@@ -9,13 +10,14 @@ import { ControladorProducao } from '../controladores/controlador-producao.js';
 import { ControladorVenda } from '../controladores/controlador-venda.js';
 
 /** Mapa único de rotas da aplicação, ligando URLs aos métodos dos controladores. */
-export function criarRotas(servicos: Servicos): Router {
+export function criarRotas(servicos: Servicos, comSenha: boolean): Router {
   const painel = new ControladorPainel(servicos.painel);
   const catalogo = new ControladorCatalogo(servicos.catalogo);
   const producao = new ControladorProducao(servicos.producao, servicos.catalogo);
   const estoque = new ControladorEstoque(servicos.estoque, servicos.catalogo);
   const clientes = new ControladorCliente(servicos.clientes, servicos.vendas, servicos.catalogo);
   const faturamento = new ControladorFaturamento(servicos.faturamento);
+  const backup = new ControladorBackup(servicos.backup, comSenha);
   const vendas = new ControladorVenda(servicos.vendas, servicos.clientes, servicos.catalogo);
 
   const rotas = Router();
@@ -40,6 +42,10 @@ export function criarRotas(servicos: Servicos): Router {
   rotas.post('/clientes/:id', clientes.atualizar);
 
   rotas.get('/faturamento', faturamento.exibir);
+
+  rotas.get('/backup', backup.exibir);
+  rotas.get('/backup/baixar', backup.baixar);
+  rotas.post('/backup/restaurar', express.json({ limit: '25mb' }), backup.restaurar);
 
   rotas.get('/vendas', vendas.listar);
   rotas.get('/vendas/nova', vendas.formularioNovo);

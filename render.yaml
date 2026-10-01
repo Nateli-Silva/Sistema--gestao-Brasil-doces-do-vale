@@ -1,0 +1,26 @@
+# Publicação no Render (https://render.com): "New > Blueprint" apontando para este repositório.
+# O disco persistente guarda os dados (clientes, vendas, estoque...) entre as atualizações.
+services:
+  - type: web
+    name: brasil-doces-do-vale
+    runtime: node
+    plan: starter
+    region: ohio
+    # --include=dev: o TypeScript (devDependency) é necessário para compilar.
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm start
+    healthCheckPath: /saude
+    autoDeploy: true # cada merge no branch main publica sozinho
+    disk:
+      name: dados
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+      - key: NODE_ENV
+        value: production
+      - key: DIRETORIO_DADOS
+        value: /var/data
+      - key: SENHA_ACESSO
+        sync: false # você digita a senha no painel do Render (não fica no código)
