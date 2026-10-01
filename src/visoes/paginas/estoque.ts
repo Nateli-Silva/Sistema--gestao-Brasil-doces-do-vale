@@ -109,7 +109,6 @@ export function paginaEstoque(dados: DadosPaginaEstoque): HtmlSeguro {
   return html`${cabecalhoPagina('Estoque', 'Saldo atualizado automaticamente por produções e vendas.', botao('Registrar produção', '/producao', { icone: 'producao' }))}
   <div class="grade grade--indicadores">
     ${indicador('Unidades em estoque', formatarInteiro(total), 'estoque')}
-    ${indicador('Sabores ativos', formatarInteiro(dados.produtos.length), 'catalogo', '', 'rosa')}
     ${indicador('Em alerta', formatarInteiro(baixos), 'alerta', baixos > 0 ? 'Reponha em breve' : 'Tudo em dia', 'chocolate')}
   </div>
   ${cartao(dados.categoriaSelecionada ? dados.categoriaSelecionada.nome : 'Estoque por categoria', consulta)}

@@ -28,7 +28,11 @@ export function criarAplicacao(servicos: Servicos, diretorioPublico: string): Ap
         paginaCompleta({
           titulo: 'Ops',
           secao: 'painel',
-          conteudo: paginaErro(naoEncontrado ? 'Não encontrado' : 'Algo deu errado', naoEncontrado ? (erro as Error).message : 'Tente novamente em instantes.'),
+          conteudo: paginaErro(
+            naoEncontrado ? 'Não encontrado' : 'Algo deu errado',
+            naoEncontrado ? (erro as Error).message : 'Tente novamente em instantes.',
+            naoEncontrado ? undefined : erro instanceof Error ? `${erro.name}: ${erro.message}` : String(erro),
+          ),
         }),
       );
   });

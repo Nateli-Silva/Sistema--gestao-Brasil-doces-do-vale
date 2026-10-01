@@ -44,13 +44,17 @@ function cartoesSabores(dados: DadosPainel): HtmlSeguro {
   </article>`)}</div>`;
 }
 
+const LIMITE_ALERTAS = 4;
+
 function alertasEstoque(dados: DadosPainel): HtmlSeguro {
   if (dados.estoqueBaixo.length === 0) return estadoVazio('Tudo certo! Nenhum sabor abaixo do estoque mínimo.');
-  return html`<ul class="lista-alertas">${dados.estoqueBaixo.map(({ produto, categoria }) => html`<li>
+  const restantes = dados.estoqueBaixo.length - LIMITE_ALERTAS;
+  return html`<ul class="lista-alertas">${dados.estoqueBaixo.slice(0, LIMITE_ALERTAS).map(({ produto, categoria }) => html`<li>
     ${bolhaCategoria(categoria, 30)}
     <div class="lista-alertas__texto"><strong>${produto.sabor}</strong><small>${categoria.nome} · mínimo ${produto.estoqueMinimo}</small>${barraEstoque(produto.quantidadeEstoque, produto.estoqueMinimo)}</div>
     ${selo(produto.quantidadeEstoque <= 0 ? 'Esgotado' : `${produto.quantidadeEstoque} un.`, produto.quantidadeEstoque <= 0 ? 'critico' : 'alerta')}
-  </li>`)}</ul>`;
+  </li>`)}</ul>
+  ${restantes > 0 ? html`<p class="texto-suave">e mais ${restantes} no <a href="/estoque">Estoque</a>.</p>` : ''}`;
 }
 
 export function paginaPainel(dados: DadosPainel): HtmlSeguro {
@@ -60,15 +64,14 @@ export function paginaPainel(dados: DadosPainel): HtmlSeguro {
     ${indicador('Faturamento do mês', formatarMoeda(indicadores.faturamentoMesCentavos), 'moeda', `Hoje: ${formatarMoeda(indicadores.faturamentoHojeCentavos)}`)}
     ${indicador('Vendas no mês', formatarInteiro(indicadores.vendasNoMes), 'recibo', `Ticket médio ${formatarMoeda(indicadores.ticketMedioCentavos)}`, 'rosa')}
     ${indicador('Produzido hoje', `${formatarInteiro(indicadores.produzidoHoje)} un.`, 'producao', '', 'chocolate')}
-    ${indicador('Clientes', formatarInteiro(indicadores.totalClientes), 'clientes', 'PF e PJ cadastrados', 'rosa')}
   </div>
   <div class="grade grade--duas">
     ${cartao('Produtos mais vendidos', rankingProdutos(dados.produtosMaisVendidos))}
     ${cartao('Faturamento — últimos 7 dias', graficoColunas(dados.ultimosSeteDias.map((d) => ({ rotulo: formatarData(d.dia).slice(0, 5), valorCentavos: d.totalCentavos }))))}
   </div>
-  ${cartao('Sabores mais vendidos por categoria', cartoesSabores(dados))}
   <div class="grade grade--duas">
     ${cartao('Cliente que mais compra', cartaoMelhorCliente(dados))}
     ${cartao(html`Alertas de estoque ${dados.estoqueBaixo.length > 0 ? selo(String(dados.estoqueBaixo.length), 'alerta') : ''}`, alertasEstoque(dados), { acao: botao('Ver estoque', '/estoque', { variante: 'suave' }) })}
-  </div>`;
+  </div>
+  <details class="recolhivel"><summary>Sabores mais vendidos por categoria</summary>${cartoesSabores(dados)}</details>`;
 }

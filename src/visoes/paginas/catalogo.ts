@@ -1,6 +1,6 @@
 import type { Categoria } from '../../dominio/tipos.js';
 import type { ProdutoDetalhado } from '../../servicos/servico-catalogo.js';
-import { centavosParaCampo, formatarMoeda } from '../../utilitarios/formatacao.js';
+import { centavosParaCampo } from '../../utilitarios/formatacao.js';
 import { campoSelecao, campoTexto, type ContextoFormulario } from '../componentes/formulario.js';
 import { alerta, bolhaCategoria, cabecalhoPagina, cartao, estadoVazio, selo } from '../componentes/interface.js';
 import { html, type HtmlSeguro } from '../html.js';
@@ -26,7 +26,6 @@ function linhaSabor(detalhe: ProdutoDetalhado): HtmlSeguro {
       <button class="botao botao--suave botao--pequeno" type="submit">Salvar</button>
     </form>
     <div class="linha-sabor__acoes">
-      <small>Em estoque: ${produto.quantidadeEstoque} · ${formatarMoeda(produto.precoCentavos)}</small>
       <form method="post" action="/catalogo/sabores/${produto.id}/alternar"><button class="botao botao--fantasma botao--pequeno" type="submit">${produto.ativo ? 'Desativar' : 'Reativar'}</button></form>
       <form method="post" action="/catalogo/sabores/${produto.id}/excluir" onsubmit="return confirm('Excluir o sabor ${produto.sabor.replace(/['"\\<>&]/g, '')}?')"><button class="botao botao--perigo botao--pequeno" type="submit">Excluir</button></form>
     </div>

@@ -6,7 +6,7 @@ import { test } from 'node:test';
 import { criarServicos } from '../src/aplicacao/container.js';
 import { ErroDeNegocio, ErroDeValidacao } from '../src/dominio/erros.js';
 import { validarCnpj, validarCpf } from '../src/utilitarios/documentos.js';
-import { converterParaCentavos, hojeIso } from '../src/utilitarios/formatacao.js';
+import { converterParaCentavos, formatarData, formatarDataHora, formatarInteiro, formatarMoeda, hojeIso, somarDias } from '../src/utilitarios/formatacao.js';
 
 function novoCenario() {
   const diretorio = fs.mkdtempSync(path.join(os.tmpdir(), 'doces-'));
@@ -108,4 +108,16 @@ test('resumo do sabor mostra total produzido, vendido e lotes recentes', () => {
   assert.equal(resumo.vendido, 15);
   assert.equal(resumo.ultimasProducoes[0]?.observacao, 'lote 2');
   assert.equal(servicos.estoque.totalProduzidoPorSabor().get(sabor.id), 60);
+});
+
+test('datas e valores usam o relógio da loja (UTC−3) e não dependem do Intl', () => {
+  // 02:30 UTC ainda é o dia anterior em São Paulo.
+  assert.equal(hojeIso(new Date('2026-10-01T02:30:00Z')), '2026-09-30');
+  assert.equal(hojeIso(new Date('2026-10-01T03:00:00Z')), '2026-10-01');
+  assert.equal(somarDias('2026-03-01', -1), '2026-02-28');
+  assert.equal(formatarData('2026-10-01'), '01/10/2026');
+  assert.equal(formatarDataHora('2026-10-01T15:05:00Z'), '01/10/2026 12:05');
+  assert.equal(formatarMoeda(141750), 'R$ 1.417,50');
+  assert.equal(formatarMoeda(5), 'R$ 0,05');
+  assert.equal(formatarInteiro(1234567), '1.234.567');
 });
