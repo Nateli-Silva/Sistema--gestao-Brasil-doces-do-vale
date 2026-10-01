@@ -1,4 +1,5 @@
 /** Restauração de backup: lê o arquivo escolhido e envia o conteúdo ao servidor. */
+import { confirmar } from './confirmacao.js';
 
 interface Resposta {
   readonly ok: boolean;
@@ -13,7 +14,13 @@ formulario?.addEventListener('submit', async (evento) => {
   evento.preventDefault();
   const arquivo = arquivoEl?.files?.[0];
   if (!arquivo || !resultado) return;
-  if (!window.confirm('Substituir TODOS os dados atuais pelos deste arquivo?')) return;
+  const ok = await confirmar({
+    titulo: 'Restaurar esta cópia?',
+    mensagem: 'Todos os dados atuais serão substituídos pelos deste arquivo. O sistema guarda uma cópia do que existia antes, por segurança.',
+    textoConfirmar: 'Restaurar',
+    perigo: true,
+  });
+  if (!ok) return;
   resultado.textContent = 'Restaurando…';
   try {
     const texto = await arquivo.text();
