@@ -120,7 +120,7 @@ export function criarCombo(config: ConfigCombo): Combo {
   entrada.addEventListener('focus', () => {
     abrir();
     // Sobe a linha na tela para a lista ficar visível acima do teclado do celular.
-    raiz.closest<HTMLElement>('[data-linha]')?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    raiz.closest<HTMLElement>('[data-linha], [data-busca-sabor]')?.scrollIntoView({ block: 'start', behavior: 'smooth' });
   });
   entrada.addEventListener('input', () => {
     sincronizar();
