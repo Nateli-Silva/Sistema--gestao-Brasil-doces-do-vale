@@ -14,10 +14,12 @@ export interface PedidoItemVenda {
   /** Obrigatório no formato CAIXA: unidades dentro de cada caixa (varia a cada venda). */
   readonly unidadesPorCaixa?: number;
   /**
-   * Valor definido por quem vende, por unidade (UNIDADE) ou por caixa (CAIXA).
+   * Valor definido por quem vende. No formato UNIDADE é por unidade; no formato CAIXA depende de `baseValor`.
    * Se omitido, usa o valor cadastrado do produto (na caixa: unidades × valor unitário).
    */
   readonly valorCentavos?: number;
+  /** Formato CAIXA: `valorCentavos` é da CAIXA inteira (padrão) ou de cada UNIDADE da caixa. */
+  readonly baseValor?: string;
 }
 
 export interface DadosVenda {
@@ -148,9 +150,12 @@ export class ServicoVenda {
     if (formato === 'CAIXA' && (porCaixa === undefined || !Number.isInteger(porCaixa) || porCaixa <= 0)) return undefined;
     const unidades = pedido.quantidade * (porCaixa ?? 1);
     // Valor padrão: o do cadastro (por unidade); na caixa, unidades da caixa × valor unitário.
+    const valorPorUnidade = formato === 'CAIXA' && pedido.baseValor === 'UNIDADE';
+    if (formato === 'CAIXA' && pedido.baseValor !== undefined && pedido.baseValor !== 'CAIXA' && !valorPorUnidade) return undefined;
     const valor = pedido.valorCentavos ?? precoUnitario * (porCaixa ?? 1);
     if (!Number.isFinite(valor) || valor <= 0) return undefined;
-    const subtotal = Math.round(pedido.quantidade * valor);
+    // Valor por unidade dentro de uma caixa: multiplica pelas unidades de todas as caixas.
+    const subtotal = Math.round(valorPorUnidade ? unidades * valor : pedido.quantidade * valor);
     return {
       produtoId: pedido.produtoId,
       formato,

@@ -183,3 +183,17 @@ test('vendas gravadas no formato antigo continuam válidas', () => {
   assert.equal(item?.subtotalCentavos, 1950);
   assert.equal(item?.caixas, null);
 });
+
+test('na caixa o valor pode ser informado por unidade em vez de pela caixa', () => {
+  const { servicos, sabor, cliente } = novoCenario();
+  servicos.producao.registrar({ data: hojeIso(), observacao: '', itens: [{ produtoId: sabor.id, quantidade: 100 }] });
+  const base = { clienteId: cliente.id, formaPagamento: 'PIX', observacao: '' };
+  // 2 caixas de 12 a R$ 7,00 cada unidade = 24 × 7,00 = R$ 168,00
+  const porUnidade = servicos.vendas.registrar({ ...base, itens: [{ produtoId: sabor.id, formato: 'CAIXA', quantidade: 2, unidadesPorCaixa: 12, valorCentavos: 700, baseValor: 'UNIDADE' }] });
+  assert.equal(porUnidade.totalCentavos, 16800);
+  assert.equal(porUnidade.itens[0]?.precoUnitarioCentavos, 700);
+  // mesma venda informada pela caixa (R$ 84,00 cada) dá o mesmo total
+  const porCaixa = servicos.vendas.registrar({ ...base, itens: [{ produtoId: sabor.id, formato: 'CAIXA', quantidade: 2, unidadesPorCaixa: 12, valorCentavos: 8400, baseValor: 'CAIXA' }] });
+  assert.equal(porCaixa.totalCentavos, 16800);
+  assert.throws(() => servicos.vendas.registrar({ ...base, itens: [{ produtoId: sabor.id, formato: 'CAIXA', quantidade: 1, unidadesPorCaixa: 12, valorCentavos: 700, baseValor: 'PALETE' }] }), ErroDeValidacao);
+});

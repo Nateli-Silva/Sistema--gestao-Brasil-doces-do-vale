@@ -13,10 +13,11 @@ interface LinhaFormulario {
   formato: string;
   quantidade: string;
   unidadesPorCaixa: string;
+  baseValor: string;
   valor: string;
 }
 
-const LINHA_VAZIA: LinhaFormulario = { produtoId: '', formato: 'UNIDADE', quantidade: '1', unidadesPorCaixa: '', valor: '' };
+const LINHA_VAZIA: LinhaFormulario = { produtoId: '', formato: 'UNIDADE', quantidade: '1', unidadesPorCaixa: '', baseValor: 'CAIXA', valor: '' };
 
 export class ControladorVenda extends ControladorBase {
   protected readonly secao = 'vendas';
@@ -67,6 +68,7 @@ export class ControladorVenda extends ControladorBase {
             formato: l.formato,
             quantidade: inteiro(l.quantidade),
             unidadesPorCaixa: inteiro(l.unidadesPorCaixa),
+            baseValor: l.baseValor,
             // Valor em branco usa o valor cadastrado do produto.
             valorCentavos: l.valor === '' ? undefined : converterParaCentavos(l.valor),
           })),
@@ -85,6 +87,7 @@ export class ControladorVenda extends ControladorBase {
       formato: lista(campos, 'formato'),
       quantidade: lista(campos, 'quantidade'),
       unidadesPorCaixa: lista(campos, 'unidadesPorCaixa'),
+      baseValor: lista(campos, 'baseValor'),
       valor: lista(campos, 'valor'),
     };
     return lista(campos, 'produtoId').map((produtoId, i) => ({
@@ -92,6 +95,7 @@ export class ControladorVenda extends ControladorBase {
       formato: colunas.formato[i] ?? 'UNIDADE',
       quantidade: colunas.quantidade[i] ?? '',
       unidadesPorCaixa: colunas.unidadesPorCaixa[i] ?? '',
+      baseValor: colunas.baseValor[i] ?? 'CAIXA',
       valor: colunas.valor[i] ?? '',
     }));
   }

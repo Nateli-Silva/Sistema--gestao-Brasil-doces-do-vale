@@ -14,6 +14,7 @@ interface LinhaInicial {
   readonly formato: string;
   readonly quantidade: string;
   readonly unidadesPorCaixa: string;
+  readonly baseValor: string;
   readonly valor: string;
 }
 
@@ -39,6 +40,8 @@ function obter<T extends Element>(raiz: ParentNode, seletor: string): T {
   return elemento;
 }
 
+const LINHA_VAZIA: LinhaInicial = { produtoId: '', formato: 'UNIDADE', quantidade: '1', unidadesPorCaixa: '', baseValor: 'CAIXA', valor: '' };
+
 const MODELO_LINHA = `
   <div data-espaco-produto></div>
   <div class="item-venda__campos">
@@ -48,6 +51,8 @@ const MODELO_LINHA = `
       <input name="quantidade" type="number" min="1" step="1" inputmode="numeric"></label>
     <label class="campo-mini" data-so-caixa><span>Unidades por caixa</span>
       <input name="unidadesPorCaixa" type="number" min="1" step="1" inputmode="numeric" placeholder="Ex.: 12"></label>
+    <label class="campo-mini" data-so-caixa><span>Informar o valor</span>
+      <select name="baseValor"><option value="CAIXA">Da caixa inteira</option><option value="UNIDADE">De cada unidade</option></select></label>
     <label class="campo-mini"><span data-rotulo-valor>Valor unitário (R$)</span>
       <input name="valor" inputmode="decimal" placeholder="0,00"></label>
   </div>
@@ -92,11 +97,17 @@ function iniciar(formulario: HTMLFormElement): void {
       const ehCaixa = obter<HTMLSelectElement>(linha, 'select[name=formato]').value === 'CAIXA';
       const quantidade = Number(obter<HTMLInputElement>(linha, 'input[name=quantidade]').value) || 0;
       const valor = paraCentavos(obter<HTMLInputElement>(linha, 'input[name=valor]').value);
-      const subtotal = Number.isNaN(valor) ? 0 : Math.round(quantidade * valor);
-      total += subtotal;
       const unidades = unidadesDaLinha(linha);
+      const porUnidade = ehCaixa && obter<HTMLSelectElement>(linha, 'select[name=baseValor]').value === 'UNIDADE';
+      const subtotal = Number.isNaN(valor) ? 0 : Math.round(porUnidade ? unidades * valor : quantidade * valor);
+      total += subtotal;
       obter<HTMLElement>(linha, '[data-subtotal]').textContent = formatar(subtotal);
-      obter<HTMLElement>(linha, '[data-resumo]').textContent = ehCaixa && unidades > 0 ? `= ${unidades.toLocaleString('pt-BR')} unidades no total` : '';
+      // Na caixa, mostra o outro valor calculado (por unidade ou por caixa).
+      const caixas = Number(obter<HTMLInputElement>(linha, 'input[name=quantidade]').value) || 0;
+      const outro = ehCaixa && unidades > 0 && subtotal > 0
+        ? ` · ${formatar(Math.round(subtotal / unidades))} cada · ${formatar(Math.round(subtotal / (caixas || 1)))} por caixa`
+        : '';
+      obter<HTMLElement>(linha, '[data-resumo]').textContent = ehCaixa && unidades > 0 ? `= ${unidades.toLocaleString('pt-BR')} unidades${outro}` : '';
       obter<HTMLElement>(linha, '[data-aviso]').textContent =
         produto && (consumo.get(produto.id) ?? 0) > produto.estoque ? `Só há ${produto.estoque} unidades de ${produto.sabor} em estoque.` : '';
     });
@@ -111,6 +122,7 @@ function iniciar(formulario: HTMLFormElement): void {
     const campo = (nome: string): HTMLInputElement => obter<HTMLInputElement>(linha, `[name=${nome}]`);
     const formato = obter<HTMLSelectElement>(linha, 'select[name=formato]');
     const valor = campo('valor');
+    const base = obter<HTMLSelectElement>(linha, 'select[name=baseValor]');
     const quantidade = campo('quantidade');
     let valorManual = inicial.valor !== '';
 
@@ -120,15 +132,15 @@ function iniciar(formulario: HTMLFormElement): void {
       const produto = produtoPorId.get(combo.idSelecionado());
       const porCaixa = Number(campo('unidadesPorCaixa').value) || 0;
       if (!produto) valor.value = '';
-      else if (formato.value === 'CAIXA') valor.value = porCaixa > 0 ? paraCampo(produto.precoCentavos * porCaixa) : '';
-      else valor.value = paraCampo(produto.precoCentavos);
+      else if (formato.value === 'CAIXA' && base.value === 'CAIXA') valor.value = porCaixa > 0 ? paraCampo(produto.precoCentavos * porCaixa) : '';
+      else valor.value = paraCampo(produto.precoCentavos); // unidade, ou caixa informada por unidade
     };
 
     const ajustarFormato = (): void => {
       const ehCaixa = formato.value === 'CAIXA';
       linha.classList.toggle('item-venda--caixa', ehCaixa);
       obter<HTMLElement>(linha, '[data-rotulo-quantidade]').textContent = ehCaixa ? 'Nº de caixas' : 'Quantidade';
-      obter<HTMLElement>(linha, '[data-rotulo-valor]').textContent = ehCaixa ? 'Valor da caixa (R$)' : 'Valor unitário (R$)';
+      obter<HTMLElement>(linha, '[data-rotulo-valor]').textContent = !ehCaixa || base.value === 'UNIDADE' ? 'Valor de cada unidade (R$)' : 'Valor da caixa (R$)';
       sugerirValor();
     };
 
@@ -149,6 +161,7 @@ function iniciar(formulario: HTMLFormElement): void {
     obter<HTMLElement>(linha, '[data-espaco-produto]').replaceWith(combo.raiz);
 
     formato.value = inicial.formato === 'CAIXA' ? 'CAIXA' : 'UNIDADE';
+    base.value = inicial.baseValor === 'UNIDADE' ? 'UNIDADE' : 'CAIXA';
     quantidade.value = inicial.quantidade;
     campo('unidadesPorCaixa').value = inicial.unidadesPorCaixa;
     valor.value = inicial.valor;
@@ -156,6 +169,18 @@ function iniciar(formulario: HTMLFormElement): void {
     ajustarFormato();
 
     formato.addEventListener('change', () => {
+      ajustarFormato();
+      recalcular();
+    });
+    // Ao trocar entre "da caixa" e "de cada unidade", converte o valor já digitado.
+    let baseAnterior = base.value;
+    base.addEventListener('change', () => {
+      const porCaixa = Number(campo('unidadesPorCaixa').value) || 0;
+      const digitado = paraCentavos(valor.value);
+      if (valorManual && porCaixa > 0 && !Number.isNaN(digitado)) {
+        valor.value = paraCampo(base.value === 'UNIDADE' && baseAnterior === 'CAIXA' ? digitado / porCaixa : digitado * porCaixa);
+      }
+      baseAnterior = base.value;
       ajustarFormato();
       recalcular();
     });
@@ -177,9 +202,9 @@ function iniciar(formulario: HTMLFormElement): void {
   };
 
   obter<HTMLButtonElement>(formulario, '[data-adicionar-item]').addEventListener('click', () =>
-    adicionarLinha({ produtoId: '', formato: 'UNIDADE', quantidade: '1', unidadesPorCaixa: '', valor: '' }),
+    adicionarLinha(LINHA_VAZIA),
   );
-  (dados.linhas.length > 0 ? dados.linhas : [{ produtoId: '', formato: 'UNIDADE', quantidade: '1', unidadesPorCaixa: '', valor: '' }]).forEach(adicionarLinha);
+  (dados.linhas.length > 0 ? dados.linhas : [LINHA_VAZIA]).forEach(adicionarLinha);
   recalcular();
 }
 
