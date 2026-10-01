@@ -5,6 +5,8 @@ export interface OpcaoCombo {
   readonly rotulo: string;
   /** Texto auxiliar exibido ao lado e também pesquisável (ex.: nome da categoria). */
   readonly detalhe?: string;
+  /** Texto extra usado só na pesquisa (ex.: números de documento e telefone). */
+  readonly busca?: string;
   readonly desabilitada?: boolean;
 }
 
@@ -15,6 +17,8 @@ export interface ConfigCombo {
   readonly nomeCampo: string;
   readonly placeholder: string;
   readonly rotuloAria: string;
+  /** Mensagem quando nada combina com o texto digitado (ex.: "Nenhum cliente encontrado."). */
+  readonly textoVazio?: string;
   /** Chamado quando o texto ou a seleção mudam. */
   readonly aoMudar: () => void;
   /** Chamado após o usuário escolher uma sugestão (ex.: levar o foco ao próximo campo). */
@@ -51,11 +55,18 @@ export function criarCombo(config: ConfigCombo): Combo {
   entrada.setAttribute('aria-label', config.rotuloAria);
 
   let destaque = -1;
-  const achar = (texto: string): OpcaoCombo | undefined => config.opcoes.find((o) => normalizar(o.rotulo) === normalizar(texto));
+  // Opção escolhida de fato (por toque/Enter ou por definir); evita confundir nomes repetidos.
+  let escolhida: OpcaoCombo | undefined;
+  /** Opção cujo nome é igual ao texto; se houver mais de uma com o mesmo nome, exige escolher na lista. */
+  const achar = (texto: string): OpcaoCombo | undefined => {
+    const iguais = config.opcoes.filter((o) => normalizar(o.rotulo) === normalizar(texto));
+    return iguais.length === 1 ? iguais[0] : undefined;
+  };
   const itens = (): HTMLLIElement[] => Array.from(lista.querySelectorAll<HTMLLIElement>('li[data-id]'));
 
   const sincronizar = (): void => {
-    oculto.value = achar(entrada.value)?.id ?? '';
+    if (!(escolhida && normalizar(escolhida.rotulo) === normalizar(entrada.value))) escolhida = achar(entrada.value);
+    oculto.value = escolhida?.id ?? '';
     config.aoMudar();
   };
 
@@ -66,6 +77,7 @@ export function criarCombo(config: ConfigCombo): Combo {
   };
 
   const escolher = (opcao: OpcaoCombo): void => {
+    escolhida = opcao;
     entrada.value = opcao.rotulo;
     sincronizar();
     fechar();
@@ -83,7 +95,7 @@ export function criarCombo(config: ConfigCombo): Combo {
   /** Abre a lista abaixo do campo, filtrada pelo texto (começa-com primeiro, depois contém). */
   const abrir = (): void => {
     const termo = normalizar(entrada.value);
-    const alvo = (o: OpcaoCombo): string => normalizar(`${o.rotulo} ${o.detalhe ?? ''}`);
+    const alvo = (o: OpcaoCombo): string => normalizar(`${o.rotulo} ${o.detalhe ?? ''} ${o.busca ?? ''}`);
     const encontrados = config.opcoes
       .filter((o) => termo === '' || alvo(o).includes(termo))
       .sort((a, b) => Number(!normalizar(a.rotulo).startsWith(termo)) - Number(!normalizar(b.rotulo).startsWith(termo)));
@@ -91,7 +103,7 @@ export function criarCombo(config: ConfigCombo): Combo {
     if (encontrados.length === 0) {
       const vazio = document.createElement('li');
       vazio.className = 'combo__vazio';
-      vazio.textContent = config.opcoes.length === 0 ? 'Nada cadastrado ainda.' : 'Nenhum sabor encontrado.';
+      vazio.textContent = config.opcoes.length === 0 ? 'Nada cadastrado ainda.' : (config.textoVazio ?? 'Nenhum resultado encontrado.');
       lista.append(vazio);
     }
     encontrados.forEach((opcao) => {
@@ -146,9 +158,8 @@ export function criarCombo(config: ConfigCombo): Combo {
     }
   });
   entrada.addEventListener('blur', () => {
-    const achado = achar(entrada.value);
-    if (achado) entrada.value = achado.rotulo; // padroniza maiúsculas/acentos
     sincronizar();
+    if (escolhida) entrada.value = escolhida.rotulo; // padroniza maiúsculas/acentos
     fechar();
   });
 
@@ -158,7 +169,8 @@ export function criarCombo(config: ConfigCombo): Combo {
     oculto,
     idSelecionado: () => oculto.value,
     definir: (id) => {
-      entrada.value = config.opcoes.find((o) => o.id === id)?.rotulo ?? '';
+      escolhida = config.opcoes.find((o) => o.id === id);
+      entrada.value = escolhida?.rotulo ?? '';
       sincronizar();
     },
     atualizar: sincronizar,

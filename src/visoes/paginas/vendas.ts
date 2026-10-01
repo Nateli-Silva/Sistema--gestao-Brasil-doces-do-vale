@@ -1,7 +1,7 @@
 import type { Cliente, FormaPagamento, Venda } from '../../dominio/tipos.js';
 import { FORMAS_PAGAMENTO } from '../../dominio/tipos.js';
 import type { ProdutoDetalhado } from '../../servicos/servico-catalogo.js';
-import { formatarDataHora, formatarInteiro, formatarMoeda } from '../../utilitarios/formatacao.js';
+import { formatarCnpj, formatarCpf, formatarDataHora, formatarInteiro, formatarMoeda } from '../../utilitarios/formatacao.js';
 import { campoAreaTexto, campoSelecao, type ContextoFormulario } from '../componentes/formulario.js';
 import { alerta, bolhaCategoria, botao, cabecalhoPagina, cartao, estadoVazio, selo } from '../componentes/interface.js';
 import { descricaoItem } from '../componentes/venda.js';
@@ -57,12 +57,26 @@ export function paginaFormularioVenda(dados: DadosFormularioVenda): HtmlSeguro {
     precoCentavos: produto.precoCentavos,
     estoque: produto.quantidadeEstoque,
   }));
+  // Clientes enviados ao script do navegador: nome na lista e dados extras pesquisáveis.
+  const clientesCliente = dados.clientes.map((c) => {
+    const documento = c.tipo === 'PF' ? c.cpf : c.cnpj;
+    return {
+      id: c.id,
+      rotulo: c.nome,
+      detalhe: c.tipo === 'PJ' ? `${c.razaoSocial} · CNPJ ${formatarCnpj(documento)}` : `Pessoa física · CPF ${formatarCpf(documento)}`,
+      busca: `${documento} ${c.telefone}`,
+    };
+  });
   const erroItens = dados.formulario.erros.itens ?? dados.erroGeral;
   const formulario = html`
     <form method="post" action="/vendas" class="formulario" data-formulario-venda>
       ${erroItens ? alerta(erroItens) : ''}
       <div class="formulario--grade">
-        ${campoSelecao(dados.formulario, { nome: 'clienteId', rotulo: 'Cliente', obrigatorio: true, vazio: 'Selecione o cliente…', opcoes: dados.clientes.map((c) => ({ valor: c.id, rotulo: `${c.nome} (${c.tipo})` })), ajuda: dados.clientes.length === 0 ? 'Cadastre um cliente antes de vender.' : undefined })}
+        <div class="campo ${dados.formulario.erros.clienteId ? 'campo--erro' : ''}">
+          <label>Cliente<span class="campo__obrigatorio" aria-hidden="true"> *</span></label>
+          <div data-espaco-cliente></div>
+          ${dados.formulario.erros.clienteId ? html`<p class="campo__erro">${dados.formulario.erros.clienteId}</p>` : dados.clientes.length === 0 ? html`<p class="campo__ajuda">Cadastre um cliente antes de vender.</p>` : ''}
+        </div>
         ${campoSelecao(dados.formulario, { nome: 'formaPagamento', rotulo: 'Pagamento', obrigatorio: true, opcoes: FORMAS_PAGAMENTO.map((f) => ({ valor: f, rotulo: ROTULO_PAGAMENTO[f] })) })}
       </div>
       <h3 class="subtitulo-secao">Itens</h3>
@@ -73,7 +87,7 @@ export function paginaFormularioVenda(dados: DadosFormularioVenda): HtmlSeguro {
       <div class="total-venda"><span>Total da venda</span><strong data-total>R$ 0,00</strong></div>
       <div class="formulario__acoes"><a class="botao botao--suave" href="/vendas">Cancelar</a><button class="botao botao--primario" type="submit">Finalizar venda</button></div>
     </form>
-    <script type="application/json" id="dados-venda">${jsonSeguro({ produtos: catalogoCliente, linhas: dados.linhas })}</script>`;
+    <script type="application/json" id="dados-venda">${jsonSeguro({ clientes: clientesCliente, clienteInicial: dados.formulario.valores.clienteId ?? '', produtos: catalogoCliente, linhas: dados.linhas })}</script>`;
   return html`${cabecalhoPagina('Nova venda', 'Os itens vendidos saem do estoque automaticamente.')}${cartao('Dados da venda', formulario)}`;
 }
 

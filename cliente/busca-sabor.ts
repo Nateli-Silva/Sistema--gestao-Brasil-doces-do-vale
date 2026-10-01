@@ -17,6 +17,7 @@ document.querySelectorAll<HTMLElement>('[data-busca-sabor]').forEach((raiz, indi
     opcoes: dados.opcoes,
     idLista: `busca-sabor-${indice}`,
     nomeCampo: 'sabor',
+    textoVazio: 'Nenhum sabor encontrado.',
     placeholder: 'Digite o nome do sabor…',
     rotuloAria: 'Buscar sabor',
     aoMudar: () => undefined,

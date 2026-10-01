@@ -53,6 +53,7 @@ function iniciar(formulario: HTMLFormElement): void {
       opcoes,
       idLista: `sugestoes-${categoriaId}-${contador++}`,
       nomeCampo: 'produtoId',
+      textoVazio: 'Nenhum sabor encontrado.',
       placeholder: 'Buscar sabor…',
       rotuloAria: 'Sabor (digite para buscar)',
       aoMudar: () => {
