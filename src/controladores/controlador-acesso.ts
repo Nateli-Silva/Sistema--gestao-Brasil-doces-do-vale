@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express';
-import { destinoSeguro, encerrarSessao, type Autenticacao } from '../aplicacao/autenticacao.js';
+import { destinoSeguro, encerrarSessao, ipDe, type Autenticacao } from '../aplicacao/autenticacao.js';
 import { lerCampos, texto } from '../utilitarios/formulario.js';
 import { paginaSimples } from '../visoes/layout.js';
 import { paginaEntrar } from '../visoes/paginas/acesso.js';
@@ -28,17 +28,17 @@ export class ControladorAcesso {
       res.redirect(303, destino);
       return;
     }
-    const espera = autenticacao.segundosBloqueado(req.ip ?? '');
+    const espera = autenticacao.segundosBloqueado(ipDe(req));
     if (espera > 0) {
       this.mostrar(res, destino, `Muitas tentativas. Tente novamente em ${Math.ceil(espera / 60)} minuto(s).`, 429);
       return;
     }
     if (!autenticacao.senhaCorreta(texto(campos, 'senha'))) {
-      autenticacao.registrarFalha(req.ip ?? '');
+      autenticacao.registrarFalha(ipDe(req));
       this.mostrar(res, destino, 'Senha incorreta.', 401);
       return;
     }
-    autenticacao.limparFalhas(req.ip ?? '');
+    autenticacao.limparFalhas(ipDe(req));
     autenticacao.iniciarSessao(req, res);
     res.redirect(303, destino);
   };

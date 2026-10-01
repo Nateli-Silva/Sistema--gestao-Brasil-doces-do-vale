@@ -1,0 +1,12 @@
+# Publicação no Netlify: os arquivos de estilo/script saem de "publico"; todo o resto vai para a função
+# (netlify/functions/app.mjs, que define path "/*" e prioriza os arquivos estáticos).
+[build]
+  command = "npm run build"
+  publish = "publico"
+  functions = "netlify/functions"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+[functions]
+  node_bundler = "esbuild"

@@ -1,12 +1,10 @@
 import { randomUUID } from 'node:crypto';
-import fs from 'node:fs';
-import path from 'node:path';
 import type { Entidade, NovaEntidade } from '../dominio/tipos.js';
+import type { ArmazenamentoDados } from './armazenamento.js';
 
 /**
- * Repositório genérico com persistência em arquivo JSON.
- * Mantém os dados em memória e grava de forma atômica (arquivo temporário + rename).
- * Pode ser substituído por um banco relacional mantendo a mesma interface pública.
+ * Repositório genérico de uma coleção. Mantém os dados em memória e entrega cada alteração ao
+ * armazenamento (arquivos, nuvem...). Pode ser trocado por um banco mantendo a mesma interface pública.
  */
 export class RepositorioJson<T extends Entidade> {
   private itens: T[];
@@ -15,10 +13,11 @@ export class RepositorioJson<T extends Entidade> {
    * @param normalizar converte registros gravados em formatos antigos para o formato atual (opcional).
    */
   constructor(
-    private readonly arquivo: string,
+    private readonly armazenamento: ArmazenamentoDados,
+    private readonly colecao: string,
     private readonly normalizar: (registro: T) => T = (registro) => registro,
   ) {
-    this.itens = this.carregar().map(this.normalizar);
+    this.itens = (this.armazenamento.carregar(this.colecao) as T[]).map(this.normalizar);
   }
 
   /** Troca todo o conteúdo (usado na restauração de cópias de segurança). */
@@ -62,15 +61,7 @@ export class RepositorioJson<T extends Entidade> {
     this.persistir();
   }
 
-  private carregar(): T[] {
-    if (!fs.existsSync(this.arquivo)) return [];
-    return JSON.parse(fs.readFileSync(this.arquivo, 'utf-8')) as T[];
-  }
-
   private persistir(): void {
-    fs.mkdirSync(path.dirname(this.arquivo), { recursive: true });
-    const temporario = `${this.arquivo}.tmp`;
-    fs.writeFileSync(temporario, JSON.stringify(this.itens, null, 2));
-    fs.renameSync(temporario, this.arquivo);
+    this.armazenamento.salvar(this.colecao, this.itens);
   }
 }
