@@ -26,13 +26,13 @@ function seloTipo(cliente: Cliente): HtmlSeguro {
 export function paginaListaClientes(clientes: readonly Cliente[], busca: string): HtmlSeguro {
   const tabela = clientes.length === 0
     ? estadoVazio(busca ? 'Nenhum cliente encontrado para a busca.' : 'Nenhum cliente cadastrado ainda.', botao('Cadastrar cliente', '/clientes/novo', { icone: 'mais' }))
-    : html`<div class="tabela-rolavel"><table class="tabela tabela--linhas-clicaveis">
+    : html`<div class="tabela-rolavel"><table class="tabela tabela--cartoes tabela--linhas-clicaveis">
       <thead><tr><th>Cliente</th><th>Documento</th><th>Contato</th><th>Cidade</th></tr></thead>
       <tbody>${clientes.map((c) => html`<tr>
-        <td><a class="celula-cliente" href="/clientes/${c.id}"><span class="avatar">${iconeInterface(c.tipo === 'PJ' ? 'predio' : 'pessoa', 18)}</span><span>${c.nome}${c.tipo === 'PJ' ? html`<small>${c.razaoSocial}</small>` : ''}</span></a></td>
-        <td>${seloTipo(c)} ${documentoFormatado(c)}</td>
-        <td>${c.telefone}<small>${c.email}</small></td>
-        <td>${c.endereco ? `${c.endereco.cidade}/${c.endereco.uf}` : '—'}</td>
+        <td data-rotulo="Cliente"><a class="celula-cliente" href="/clientes/${c.id}"><span class="avatar">${iconeInterface(c.tipo === 'PJ' ? 'predio' : 'pessoa', 18)}</span><span>${c.nome}${c.tipo === 'PJ' ? html`<small>${c.razaoSocial}</small>` : ''}</span></a></td>
+        <td data-rotulo="Documento">${seloTipo(c)} <span class="doc">${documentoFormatado(c)}</span></td>
+        <td data-rotulo="Contato">${c.telefone}<small>${c.email}</small></td>
+        <td data-rotulo="Cidade">${c.endereco ? `${c.endereco.cidade}/${c.endereco.uf}` : '—'}</td>
       </tr>`)}</tbody></table></div>`;
   return html`${cabecalhoPagina('Clientes', 'Pessoas físicas e empresas que compram da doceria.', botao('Novo cliente', '/clientes/novo', { icone: 'mais' }))}
   ${cartao('Todos os clientes', html`<form class="busca" method="get" action="/clientes" role="search">${iconeInterface('busca', 18)}<input type="search" name="busca" value="${busca}" placeholder="Buscar por nome, e-mail ou documento" aria-label="Buscar clientes"><button class="botao botao--suave" type="submit">Buscar</button></form>${tabela}`)}`;
@@ -104,12 +104,12 @@ export function paginaPerfilCliente({ cliente, historico, indice }: DadosPerfilC
 
   const compras = historico.vendas.length === 0
     ? estadoVazio('Este cliente ainda não comprou.', botao('Registrar venda', `/vendas/nova?cliente=${cliente.id}`, { icone: 'mais' }))
-    : html`<div class="tabela-rolavel"><table class="tabela">
+    : html`<div class="tabela-rolavel"><table class="tabela tabela--cartoes">
       <thead><tr><th>Data</th><th>Itens</th><th>Pagamento</th><th class="num">Total</th></tr></thead>
       <tbody>${historico.vendas.map((v) => html`<tr>
-        <td><a href="/vendas/${v.id}">${formatarDataHora(v.data)}</a></td>
-        <td>${v.itens.map((i) => html`<span class="ficha">${indice.get(i.produtoId)?.produto.sabor ?? '—'} · ${descricaoItem(i)}</span>`)}</td>
-        <td>${v.formaPagamento}</td><td class="num"><strong>${formatarMoeda(v.totalCentavos)}</strong></td>
+        <td data-rotulo="Data"><a href="/vendas/${v.id}">${formatarDataHora(v.data)}</a></td>
+        <td data-rotulo="Itens">${v.itens.map((i) => html`<span class="ficha">${indice.get(i.produtoId)?.produto.sabor ?? '—'} · ${descricaoItem(i)}</span>`)}</td>
+        <td data-rotulo="Pagamento">${v.formaPagamento}</td><td class="num" data-rotulo="Total"><strong>${formatarMoeda(v.totalCentavos)}</strong></td>
       </tr>`)}</tbody></table></div>`;
 
   return html`${cabecalhoPagina(cliente.nome, cliente.tipo === 'PJ' ? 'Pessoa jurídica' : 'Pessoa física', [botao('Editar', `/clientes/${cliente.id}/editar`, { icone: 'editar', variante: 'suave' }), botao('Nova venda', `/vendas/nova?cliente=${cliente.id}`, { icone: 'mais' })])}

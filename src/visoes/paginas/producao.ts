@@ -19,11 +19,11 @@ export interface DadosPaginaProducao {
 
 function historico(dados: DadosPaginaProducao): HtmlSeguro {
   if (dados.recentes.length === 0) return estadoVazio('Nenhuma produção registrada ainda.');
-  return html`<div class="tabela-rolavel"><table class="tabela">
+  return html`<div class="tabela-rolavel"><table class="tabela tabela--cartoes">
     <thead><tr><th>Data</th><th>Sabor</th><th class="num">Qtd.</th></tr></thead>
     <tbody>${dados.recentes.map((p) => {
       const detalhe = dados.indice.get(p.produtoId);
-      return html`<tr><td>${formatarData(p.data)}</td><td>${detalhe ? html`<span class="celula-produto">${bolhaCategoria(detalhe.categoria, 26)}<span>${detalhe.produto.sabor}<small>${detalhe.categoria.nome}</small></span></span>` : '—'}</td><td class="num">${selo(`+${formatarInteiro(p.quantidade)}`, 'ok')}</td></tr>`;
+      return html`<tr><td data-rotulo="Data">${formatarData(p.data)}</td><td data-rotulo="Sabor">${detalhe ? html`<span class="celula-produto">${bolhaCategoria(detalhe.categoria, 26)}<span>${detalhe.produto.sabor}<small>${detalhe.categoria.nome}</small></span></span>` : '—'}</td><td class="num" data-rotulo="Quantidade">${selo(`+${formatarInteiro(p.quantidade)}`, 'ok')}</td></tr>`;
     })}</tbody></table></div>`;
 }
 

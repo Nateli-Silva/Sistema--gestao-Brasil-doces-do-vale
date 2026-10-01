@@ -42,12 +42,12 @@ function detalheDoSabor({ produto, categoria }: ProdutoDetalhado, resumo: Resumo
 
 function listaDaCategoria(dados: DadosPaginaEstoque, daCategoria: readonly ProdutoDetalhado[]): HtmlSeguro {
   if (daCategoria.length === 0) return estadoVazio('Nenhum sabor ativo nesta categoria.', botao('Cadastrar sabores', '/catalogo'));
-  return html`<div class="tabela-rolavel"><table class="tabela tabela--linhas-clicaveis">
+  return html`<div class="tabela-rolavel"><table class="tabela tabela--cartoes tabela--linhas-clicaveis">
     <thead><tr><th>Sabor</th><th class="num">Produzido</th><th class="num">Estoque</th></tr></thead>
     <tbody>${daCategoria.map((item) => html`<tr>
-      <td><a href="/estoque?sabor=${item.produto.id}">${item.produto.sabor}</a><br>${seloEstoque(item.produto.quantidadeEstoque, item.produto.estoqueMinimo)}</td>
-      <td class="num">${formatarInteiro(dados.produzidoPorSabor.get(item.produto.id) ?? 0)}</td>
-      <td class="num"><strong>${formatarInteiro(item.produto.quantidadeEstoque)}</strong></td>
+      <td data-rotulo="Sabor"><a href="/estoque?sabor=${item.produto.id}">${item.produto.sabor}</a><br>${seloEstoque(item.produto.quantidadeEstoque, item.produto.estoqueMinimo)}</td>
+      <td class="num" data-rotulo="Produzido">${formatarInteiro(dados.produzidoPorSabor.get(item.produto.id) ?? 0)}</td>
+      <td class="num" data-rotulo="Estoque"><strong>${formatarInteiro(item.produto.quantidadeEstoque)}</strong></td>
     </tr>`)}</tbody></table></div>`;
 }
 
