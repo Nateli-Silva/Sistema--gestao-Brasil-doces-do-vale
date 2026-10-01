@@ -236,3 +236,19 @@ test('faturamento por dia, semana, mês e ano usa o calendário da loja', () => 
   const formas = servicos.faturamento.porFormaPagamento(periodoDe('dia', hoje));
   assert.deepEqual(formas.map((f) => f.forma), ['PIX']);
 });
+
+test('cadastro de sabor só com categoria e nome; valor é definido na venda', () => {
+  const { servicos, sabor, cliente } = novoCenario();
+  const novo = servicos.catalogo.cadastrarSabor({ categoriaId: sabor.categoriaId, sabor: 'Cereja' });
+  assert.equal(novo.precoCentavos, 0);
+  assert.equal(novo.estoqueMinimo, 10);
+  servicos.producao.registrar({ data: hojeIso(), observacao: '', itens: [{ produtoId: novo.id, quantidade: 20 }] });
+  const base = { clienteId: cliente.id, formaPagamento: 'PIX', observacao: '' };
+  // sem valor cadastrado e sem valor na venda: recusa
+  assert.throws(() => servicos.vendas.registrar({ ...base, itens: [{ produtoId: novo.id, quantidade: 2 }] }), ErroDeValidacao);
+  const venda = servicos.vendas.registrar({ ...base, itens: [{ produtoId: novo.id, quantidade: 2, valorCentavos: 900 }] });
+  assert.equal(venda.totalCentavos, 1800);
+  // valor e mínimo podem ser definidos depois; valor em branco (0) é permitido
+  assert.equal(servicos.catalogo.atualizarProduto(novo.id, { sabor: 'Cereja', precoCentavos: 0, estoqueMinimo: 3 }).estoqueMinimo, 3);
+  assert.throws(() => servicos.catalogo.atualizarProduto(novo.id, { sabor: 'Cereja', precoCentavos: -5, estoqueMinimo: 3 }), ErroDeValidacao);
+});

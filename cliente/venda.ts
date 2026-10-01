@@ -59,7 +59,7 @@ const MODELO_LINHA = `
     <label class="campo-mini" data-so-caixa><span>Informar o valor</span>
       <select name="baseValor"><option value="CAIXA">Da caixa inteira</option><option value="UNIDADE">De cada unidade</option></select></label>
     <label class="campo-mini"><span data-rotulo-valor>Valor unitário (R$)</span>
-      <input name="valor" inputmode="decimal" placeholder="0,00"></label>
+      <input name="valor" inputmode="decimal" placeholder="0,00" required></label>
   </div>
   <div class="item-venda__rodape">
     <small data-resumo></small>
@@ -98,7 +98,7 @@ function iniciar(formulario: HTMLFormElement): void {
   const opcoes: OpcaoCombo[] = dados.produtos.map((p) => ({
     id: p.id,
     rotulo: p.sabor,
-    detalhe: p.estoque > 0 ? `${p.categoria} · ${formatar(p.precoCentavos)} · ${p.estoque} em estoque` : `${p.categoria} · esgotado`,
+    detalhe: p.estoque > 0 ? `${p.categoria} · ${p.precoCentavos > 0 ? `${formatar(p.precoCentavos)} · ` : ''}${p.estoque} em estoque` : `${p.categoria} · esgotado`,
     desabilitada: p.estoque <= 0,
   }));
   let contador = 0;
@@ -158,7 +158,7 @@ function iniciar(formulario: HTMLFormElement): void {
       if (valorManual) return;
       const produto = produtoPorId.get(combo.idSelecionado());
       const porCaixa = Number(campo('unidadesPorCaixa').value) || 0;
-      if (!produto) valor.value = '';
+      if (!produto || produto.precoCentavos <= 0) valor.value = ''; // sem valor sugerido: você digita
       else if (formato.value === 'CAIXA' && base.value === 'CAIXA') valor.value = porCaixa > 0 ? paraCampo(produto.precoCentavos * porCaixa) : '';
       else valor.value = paraCampo(produto.precoCentavos); // unidade, ou caixa informada por unidade
     };
