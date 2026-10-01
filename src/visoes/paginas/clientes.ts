@@ -28,7 +28,7 @@ export function paginaListaClientes(clientes: readonly Cliente[], busca: string)
     : html`<div class="tabela-rolavel"><table class="tabela tabela--linhas-clicaveis">
       <thead><tr><th>Cliente</th><th>Documento</th><th>Contato</th><th>Cidade</th></tr></thead>
       <tbody>${clientes.map((c) => html`<tr>
-        <td><a class="celula-cliente" href="/clientes/${c.id}"><span class="avatar">${iconeInterface(c.tipo === 'PJ' ? 'predio' : 'pessoa', 18)}</span><span>${c.nome}<small>${c.tipo === 'PJ' ? c.razaoSocial : 'Pessoa física'}</small></span></a></td>
+        <td><a class="celula-cliente" href="/clientes/${c.id}"><span class="avatar">${iconeInterface(c.tipo === 'PJ' ? 'predio' : 'pessoa', 18)}</span><span>${c.nome}${c.tipo === 'PJ' ? html`<small>${c.razaoSocial}</small>` : ''}</span></a></td>
         <td>${seloTipo(c)} ${documentoFormatado(c)}</td>
         <td>${c.telefone}<small>${c.email}</small></td>
         <td>${c.endereco ? `${c.endereco.cidade}/${c.endereco.uf}` : '—'}</td>

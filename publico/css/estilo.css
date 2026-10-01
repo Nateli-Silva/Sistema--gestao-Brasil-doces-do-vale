@@ -224,7 +224,7 @@ textarea { resize: vertical; }
 .linha-sabor__campo input { padding: 7px 10px; width: 92px; }
 .linha-sabor__campo--nome { flex: 1 1 160px; }
 .linha-sabor__campo--nome input { width: 100%; }
-.linha-sabor__acoes { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.linha-sabor__acoes { display: flex; gap: 8px; align-items: center; justify-content: flex-end; flex-wrap: wrap; }
 .linha-sabor__acoes small { flex: 1; }
 .botao--perigo { background: var(--critico-claro); color: #8f2e2d; }
 .botao--perigo:hover { background: #f2c4c1; color: #8f2e2d; }
@@ -308,3 +308,5 @@ textarea { resize: vertical; }
 .recolhivel { background: var(--papel); border: 1px solid var(--linha); border-radius: var(--raio); box-shadow: var(--sombra); padding: 14px 20px; }
 .recolhivel summary { cursor: pointer; font-family: var(--fonte-titulo); font-weight: 600; font-size: 1.1rem; }
 .recolhivel[open] summary { margin-bottom: 14px; }
+.detalhe-erro { white-space: pre-wrap; word-break: break-word; font-size: .8rem; color: var(--texto-suave); margin: 0; }
+.recolhivel .grade { margin-top: 4px; }
