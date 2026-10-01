@@ -6,6 +6,7 @@ import { test } from 'node:test';
 import { criarServicos } from '../src/aplicacao/container.js';
 import { ErroDeNegocio, ErroDeValidacao } from '../src/dominio/erros.js';
 import { validarCnpj, validarCpf } from '../src/utilitarios/documentos.js';
+import { periodoAnterior, periodoDe } from '../src/utilitarios/periodos.js';
 import { converterParaCentavos, formatarData, formatarDataHora, formatarInteiro, formatarMoeda, hojeIso, somarDias } from '../src/utilitarios/formatacao.js';
 
 function novoCenario() {
@@ -196,4 +197,42 @@ test('na caixa o valor pode ser informado por unidade em vez de pela caixa', () 
   const porCaixa = servicos.vendas.registrar({ ...base, itens: [{ produtoId: sabor.id, formato: 'CAIXA', quantidade: 2, unidadesPorCaixa: 12, valorCentavos: 8400, baseValor: 'CAIXA' }] });
   assert.equal(porCaixa.totalCentavos, 16800);
   assert.throws(() => servicos.vendas.registrar({ ...base, itens: [{ produtoId: sabor.id, formato: 'CAIXA', quantidade: 1, unidadesPorCaixa: 12, valorCentavos: 700, baseValor: 'PALETE' }] }), ErroDeValidacao);
+});
+
+test('períodos: semana de segunda a domingo, mês e ano civis', () => {
+  // 2026-10-01 é uma quinta-feira
+  assert.deepEqual(periodoDe('semana', '2026-10-01'), { inicio: '2026-09-28', fim: '2026-10-04' });
+  assert.deepEqual(periodoDe('mes', '2026-02-10'), { inicio: '2026-02-01', fim: '2026-02-28' });
+  assert.deepEqual(periodoDe('mes', '2028-02-10'), { inicio: '2028-02-01', fim: '2028-02-29' });
+  assert.deepEqual(periodoDe('ano', '2026-10-01'), { inicio: '2026-01-01', fim: '2026-12-31' });
+  assert.deepEqual(periodoAnterior('mes', '2026-01-15'), { inicio: '2025-12-01', fim: '2025-12-31' });
+  assert.deepEqual(periodoAnterior('semana', '2026-10-01'), { inicio: '2026-09-21', fim: '2026-09-27' });
+});
+
+test('faturamento por dia, semana, mês e ano usa o calendário da loja', () => {
+  const { servicos, sabor, cliente } = novoCenario();
+  servicos.producao.registrar({ data: hojeIso(), observacao: '', itens: [{ produtoId: sabor.id, quantidade: 100 }] });
+  const hoje = hojeIso();
+  const registrar = (quantidade: number, dia: string, forma: 'PIX' | 'DINHEIRO'): void => {
+    const venda = servicos.vendas.registrar({ clienteId: cliente.id, formaPagamento: forma, observacao: '', itens: [{ produtoId: sabor.id, quantidade, valorCentavos: 1000 }] });
+    // meio-dia na loja (UTC−3) do dia desejado
+    servicos.repositorios.vendas.atualizar({ ...venda, data: new Date(`${dia}T15:00:00Z`).toISOString() });
+  };
+  registrar(2, hoje, 'PIX'); // R$ 20,00 hoje
+  registrar(3, somarDias(hoje, -1), 'DINHEIRO'); // R$ 30,00 ontem
+  registrar(1, somarDias(hoje, -400), 'PIX'); // R$ 10,00 no ano passado
+
+  const dia = servicos.faturamento.resumir('dia', hoje);
+  assert.equal(dia.totalCentavos, 2000);
+  assert.equal(dia.anteriorCentavos, 3000);
+  assert.equal(dia.variacaoPercentual, -33);
+  const ano = servicos.faturamento.resumir('ano', hoje);
+  assert.ok(ano.totalCentavos >= 2000 && ano.totalCentavos <= 5000);
+  const serie = servicos.faturamento.serie('dia', hoje);
+  assert.equal(serie.length, 14);
+  assert.equal(serie.at(-1)?.atual, true);
+  assert.equal(serie.at(-1)?.totalCentavos, 2000);
+  assert.equal(servicos.faturamento.serie('mes', hoje).length, 12);
+  const formas = servicos.faturamento.porFormaPagamento(periodoDe('dia', hoje));
+  assert.deepEqual(formas.map((f) => f.forma), ['PIX']);
 });
