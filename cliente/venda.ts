@@ -19,6 +19,8 @@ interface LinhaInicial {
 }
 
 interface DadosVenda {
+  readonly clientes: readonly OpcaoCombo[];
+  readonly clienteInicial: string;
   readonly produtos: readonly ProdutoVenda[];
   readonly linhas: readonly LinhaInicial[];
 }
@@ -65,6 +67,28 @@ const MODELO_LINHA = `
     <button type="button" class="botao botao--fantasma botao--pequeno" data-remover>Remover</button>
   </div>
   <p class="campo__erro item-venda__aviso" data-aviso></p>`;
+
+/** Busca de cliente: digitar "Pedro" lista os Pedros cadastrados (também por razão social, documento ou telefone). */
+function iniciarCliente(formulario: HTMLFormElement, dados: DadosVenda): void {
+  const espaco = obter<HTMLElement>(formulario, '[data-espaco-cliente]');
+  const combo = criarCombo({
+    opcoes: dados.clientes,
+    idLista: 'sugestoes-clientes',
+    nomeCampo: 'clienteId',
+    textoVazio: 'Nenhum cliente encontrado.',
+    placeholder: 'Buscar cliente pelo nome…',
+    rotuloAria: 'Cliente (digite para buscar)',
+    aoMudar: () => {
+      const texto = combo.entrada.value.trim();
+      combo.entrada.setCustomValidity(
+        texto === '' ? 'Escolha o cliente.' : combo.idSelecionado() === '' ? 'Escolha um cliente da lista.' : '',
+      );
+    },
+    aoEscolher: () => undefined,
+  });
+  espaco.replaceWith(combo.raiz);
+  combo.definir(dados.clienteInicial);
+}
 
 function iniciar(formulario: HTMLFormElement): void {
   const dados = JSON.parse(obter<HTMLScriptElement>(document, '#dados-venda').textContent ?? '{}') as DadosVenda;
@@ -152,6 +176,7 @@ function iniciar(formulario: HTMLFormElement): void {
       opcoes,
       idLista: `produtos-${contador++}`,
       nomeCampo: 'produtoId',
+      textoVazio: 'Nenhum produto encontrado.',
       placeholder: 'Buscar produto…',
       rotuloAria: 'Produto (digite para buscar)',
       aoMudar: () => {
@@ -207,6 +232,8 @@ function iniciar(formulario: HTMLFormElement): void {
     });
     container.append(linha);
   };
+
+  iniciarCliente(formulario, dados);
 
   obter<HTMLButtonElement>(formulario, '[data-adicionar-item]').addEventListener('click', () =>
     adicionarLinha(LINHA_VAZIA),
