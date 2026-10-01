@@ -2,6 +2,7 @@ import { Router } from 'express';
 import type { Servicos } from '../aplicacao/container.js';
 import { ControladorCatalogo } from '../controladores/controlador-catalogo.js';
 import { ControladorCliente } from '../controladores/controlador-cliente.js';
+import { ControladorFaturamento } from '../controladores/controlador-faturamento.js';
 import { ControladorEstoque } from '../controladores/controlador-estoque.js';
 import { ControladorPainel } from '../controladores/controlador-painel.js';
 import { ControladorProducao } from '../controladores/controlador-producao.js';
@@ -14,6 +15,7 @@ export function criarRotas(servicos: Servicos): Router {
   const producao = new ControladorProducao(servicos.producao, servicos.catalogo);
   const estoque = new ControladorEstoque(servicos.estoque, servicos.catalogo);
   const clientes = new ControladorCliente(servicos.clientes, servicos.vendas, servicos.catalogo);
+  const faturamento = new ControladorFaturamento(servicos.faturamento);
   const vendas = new ControladorVenda(servicos.vendas, servicos.clientes, servicos.catalogo);
 
   const rotas = Router();
@@ -36,6 +38,8 @@ export function criarRotas(servicos: Servicos): Router {
   rotas.get('/clientes/:id', clientes.exibir);
   rotas.get('/clientes/:id/editar', clientes.formularioEdicao);
   rotas.post('/clientes/:id', clientes.atualizar);
+
+  rotas.get('/faturamento', faturamento.exibir);
 
   rotas.get('/vendas', vendas.listar);
   rotas.get('/vendas/nova', vendas.formularioNovo);

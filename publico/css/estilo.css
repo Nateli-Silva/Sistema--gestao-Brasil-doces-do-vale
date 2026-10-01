@@ -249,7 +249,7 @@ textarea { resize: vertical; }
 .total-venda strong { font-family: var(--fonte-titulo); font-size: 1.7rem; }
 
 /* gráfico */
-.grafico { width: 100%; height: auto; display: block; }
+.grafico { width: 100%; max-width: 560px; height: auto; display: block; margin: 0 auto; }
 .grafico__eixo { stroke: var(--linha); stroke-width: 1.5; }
 .grafico__barra { fill: var(--caramelo-claro); }
 .grafico__barra--hoje { fill: var(--caramelo); }
@@ -270,7 +270,7 @@ textarea { resize: vertical; }
   .pagina { padding: 20px 16px 96px; gap: 18px; }
   h1 { font-size: 1.55rem; }
   .menu--inferior {
-    display: grid; grid-template-columns: repeat(6, 1fr); position: fixed; inset: auto 0 0 0; z-index: 10;
+    display: grid; grid-template-columns: repeat(7, 1fr); position: fixed; inset: auto 0 0 0; z-index: 10;
     background: var(--papel); border-top: 1px solid var(--linha); padding: 6px 4px calc(6px + env(safe-area-inset-bottom)); box-shadow: 0 -6px 20px rgb(74 45 37 / 10%);
   }
   .menu--inferior .menu__item { flex-direction: column; gap: 2px; padding: 6px 2px; font-size: .68rem; color: var(--texto-suave); border-radius: 12px; }
@@ -336,3 +336,19 @@ textarea { resize: vertical; }
 .segmento button[aria-pressed='true'] { background: var(--caramelo-claro); border-color: var(--caramelo); }
 .segmento button[aria-pressed='true'] small { color: var(--chocolate-2); }
 button, .botao, .chip { -webkit-tap-highlight-color: transparent; }
+
+/* faturamento */
+.grade--faturamento { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; }
+.cartao-periodo { display: flex; flex-direction: column; gap: 4px; padding: 16px; background: var(--papel); border: 1.5px solid var(--linha); border-radius: var(--raio); box-shadow: var(--sombra); text-decoration: none; }
+.cartao-periodo:hover { border-color: var(--caramelo); }
+.cartao-periodo--ativo { border-color: var(--caramelo); background: linear-gradient(180deg, var(--caramelo-claro), var(--papel) 70%); }
+.cartao-periodo__titulo { font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; font-weight: 700; color: var(--texto-suave); }
+.cartao-periodo__valor { font-family: var(--fonte-titulo); font-size: 1.5rem; line-height: 1.15; }
+.linha-atual td { background: #fdf3e3; }
+@media (max-width: 860px) {
+  .menu--inferior { grid-template-columns: repeat(7, 1fr); }
+  .menu--inferior .menu__item { font-size: .6rem; }
+}
+.coluna { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+.indicador--link { text-decoration: none; }
+.indicador--link:hover { border-color: var(--caramelo); }

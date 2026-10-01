@@ -11,11 +11,13 @@ export function cartao(titulo: Interpolavel, conteudo: Interpolavel, opcoes: { a
   </section>`;
 }
 
-export function indicador(rotulo: string, valor: string, icone: NomeIconeInterface, detalhe = '', tom: 'caramelo' | 'rosa' | 'chocolate' = 'caramelo'): HtmlSeguro {
-  return html`<article class="indicador indicador--${tom}">
+export function indicador(rotulo: string, valor: string, icone: NomeIconeInterface, detalhe = '', tom: 'caramelo' | 'rosa' | 'chocolate' = 'caramelo', href?: string): HtmlSeguro {
+  const corpo = html`
     <span class="indicador__icone">${iconeInterface(icone, 22)}</span>
-    <div><p class="indicador__rotulo">${rotulo}</p><p class="indicador__valor">${valor}</p>${detalhe ? html`<p class="indicador__detalhe">${detalhe}</p>` : ''}</div>
-  </article>`;
+    <div><p class="indicador__rotulo">${rotulo}</p><p class="indicador__valor">${valor}</p>${detalhe ? html`<p class="indicador__detalhe">${detalhe}</p>` : ''}</div>`;
+  return href
+    ? html`<a class="indicador indicador--${tom} indicador--link" href="${href}">${corpo}</a>`
+    : html`<article class="indicador indicador--${tom}">${corpo}</article>`;
 }
 
 export function cabecalhoPagina(titulo: string, subtitulo: string, acoes: Interpolavel = ''): HtmlSeguro {

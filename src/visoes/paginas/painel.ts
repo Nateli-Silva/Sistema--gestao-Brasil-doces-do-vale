@@ -1,6 +1,5 @@
 import type { DadosPainel, LinhaRanking } from '../../servicos/servico-painel.js';
-import { formatarData, formatarInteiro, formatarMoeda } from '../../utilitarios/formatacao.js';
-import { graficoColunas } from '../componentes/graficos.js';
+import { formatarInteiro, formatarMoeda } from '../../utilitarios/formatacao.js';
 import { iconeInterface } from '../componentes/icones.js';
 import { barraEstoque, bolhaCategoria, botao, cabecalhoPagina, cartao, estadoVazio, indicador, selo } from '../componentes/interface.js';
 import { html, type HtmlSeguro } from '../html.js';
@@ -61,17 +60,16 @@ export function paginaPainel(dados: DadosPainel): HtmlSeguro {
   const { indicadores } = dados;
   return html`${cabecalhoPagina('Painel', 'Resumo do que está acontecendo na doceria.', [botao('Nova venda', '/vendas/nova', { icone: 'mais' }), botao('Registrar produção', '/producao', { icone: 'producao', variante: 'suave' })])}
   <div class="grade grade--indicadores">
-    ${indicador('Faturamento do mês', formatarMoeda(indicadores.faturamentoMesCentavos), 'moeda', `Hoje: ${formatarMoeda(indicadores.faturamentoHojeCentavos)}`)}
+    ${indicador('Faturamento do mês', formatarMoeda(indicadores.faturamentoMesCentavos), 'moeda', `Hoje: ${formatarMoeda(indicadores.faturamentoHojeCentavos)} · ver faturamento`, 'caramelo', '/faturamento')}
     ${indicador('Vendas no mês', formatarInteiro(indicadores.vendasNoMes), 'recibo', `Ticket médio ${formatarMoeda(indicadores.ticketMedioCentavos)}`, 'rosa')}
     ${indicador('Produzido hoje', `${formatarInteiro(indicadores.produzidoHoje)} un.`, 'producao', '', 'chocolate')}
   </div>
   <div class="grade grade--duas">
     ${cartao('Produtos mais vendidos', rankingProdutos(dados.produtosMaisVendidos))}
-    ${cartao('Faturamento — últimos 7 dias', graficoColunas(dados.ultimosSeteDias.map((d) => ({ rotulo: formatarData(d.dia).slice(0, 5), valorCentavos: d.totalCentavos }))))}
-  </div>
-  <div class="grade grade--duas">
-    ${cartao('Cliente que mais compra', cartaoMelhorCliente(dados))}
-    ${cartao(html`Alertas de estoque ${dados.estoqueBaixo.length > 0 ? selo(String(dados.estoqueBaixo.length), 'alerta') : ''}`, alertasEstoque(dados), { acao: botao('Ver estoque', '/estoque', { variante: 'suave' }) })}
+    <div class="coluna">
+      ${cartao('Cliente que mais compra', cartaoMelhorCliente(dados))}
+      ${cartao(html`Alertas de estoque ${dados.estoqueBaixo.length > 0 ? selo(String(dados.estoqueBaixo.length), 'alerta') : ''}`, alertasEstoque(dados), { acao: botao('Ver estoque', '/estoque', { variante: 'suave' }) })}
+    </div>
   </div>
   <details class="recolhivel"><summary>Sabores mais vendidos por categoria</summary>${cartoesSabores(dados)}</details>`;
 }

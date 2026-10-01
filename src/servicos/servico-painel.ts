@@ -1,9 +1,9 @@
 import type { Categoria, Cliente, Produto } from '../dominio/tipos.js';
 import type { Repositorios } from '../repositorios/repositorios.js';
-import { somarTotal, type TotaisProduto } from '../utilitarios/estatisticas.js';
-import { diaDe, hojeIso, somarDias } from '../utilitarios/formatacao.js';
+import type { TotaisProduto } from '../utilitarios/estatisticas.js';
 import type { ServicoCatalogo } from './servico-catalogo.js';
 import type { ServicoEstoque } from './servico-estoque.js';
+import type { ServicoFaturamento } from './servico-faturamento.js';
 import type { ServicoProducao } from './servico-producao.js';
 import type { ServicoVenda } from './servico-venda.js';
 
@@ -36,18 +36,12 @@ export interface MelhorCliente {
   readonly favorito: LinhaRanking | null;
 }
 
-export interface VendaDoDia {
-  readonly dia: string;
-  readonly totalCentavos: number;
-}
-
 export interface DadosPainel {
   readonly indicadores: IndicadoresGerais;
   readonly produtosMaisVendidos: LinhaRanking[];
   readonly saboresPorCategoria: SaboresDaCategoria[];
   readonly melhorCliente: MelhorCliente | null;
   readonly estoqueBaixo: Array<{ produto: Produto; categoria: Categoria }>;
-  readonly ultimosSeteDias: VendaDoDia[];
 }
 
 /** Consolida as informações do dashboard a partir dos demais serviços (somente leitura). */
@@ -58,6 +52,7 @@ export class ServicoPainel {
     private readonly estoque: ServicoEstoque,
     private readonly producao: ServicoProducao,
     private readonly vendas: ServicoVenda,
+    private readonly faturamento: ServicoFaturamento,
   ) {}
 
   montar(limiteRanking = 5): DadosPainel {
@@ -84,21 +79,17 @@ export class ServicoPainel {
           const detalhe = indice.get(produto.id);
           return detalhe ? [{ produto, categoria: detalhe.categoria }] : [];
         }),
-      ultimosSeteDias: this.vendasPorDia(7),
     };
   }
 
   private calcularIndicadores(): IndicadoresGerais {
-    const hoje = hojeIso();
-    const todas = this.repos.vendas.listar();
-    const doMes = todas.filter((v) => diaDe(v.data).slice(0, 7) === hoje.slice(0, 7));
-    const faturamentoMes = somarTotal(doMes);
+    const mes = this.faturamento.resumir('mes');
     return {
-      faturamentoMesCentavos: faturamentoMes,
-      faturamentoHojeCentavos: somarTotal(todas.filter((v) => diaDe(v.data) === hoje)),
-      vendasNoMes: doMes.length,
-      ticketMedioCentavos: doMes.length > 0 ? Math.round(faturamentoMes / doMes.length) : 0,
-      produzidoHoje: this.producao.totalProduzidoNoDia(hoje),
+      faturamentoMesCentavos: mes.totalCentavos,
+      faturamentoHojeCentavos: this.faturamento.resumir('dia').totalCentavos,
+      vendasNoMes: mes.vendas,
+      ticketMedioCentavos: mes.ticketMedioCentavos,
+      produzidoHoje: this.producao.totalProduzidoNoDia(),
       totalClientes: this.repos.clientes.listar().length,
     };
   }
@@ -115,19 +106,4 @@ export class ServicoPainel {
       favorito: topo.favorito ? paraLinha(topo.favorito) : null,
     };
   }
-
-  /** Faturamento dos últimos `dias` dias (incluindo hoje), dias sem venda com total zero. */
-  private vendasPorDia(dias: number): VendaDoDia[] {
-    const hoje = hojeIso();
-    const totais = new Map<string, number>();
-    for (const venda of this.repos.vendas.listar()) {
-      const dia = diaDe(venda.data);
-      totais.set(dia, (totais.get(dia) ?? 0) + venda.totalCentavos);
-    }
-    return Array.from({ length: dias }, (_, i) => {
-      const dia = somarDias(hoje, i - (dias - 1));
-      return { dia, totalCentavos: totais.get(dia) ?? 0 };
-    });
-  }
 }
-

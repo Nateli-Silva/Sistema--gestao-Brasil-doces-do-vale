@@ -2,11 +2,12 @@ import { html, type HtmlSeguro, type Interpolavel } from './html.js';
 import { alerta } from './componentes/interface.js';
 import { iconeInterface, logotipo, type NomeIconeInterface } from './componentes/icones.js';
 
-export type SecaoMenu = 'painel' | 'vendas' | 'producao' | 'estoque' | 'clientes' | 'catalogo';
+export type SecaoMenu = 'painel' | 'vendas' | 'faturamento' | 'producao' | 'estoque' | 'clientes' | 'catalogo';
 
 const ITENS_MENU: ReadonlyArray<{ secao: SecaoMenu; rotulo: string; href: string; icone: NomeIconeInterface }> = [
   { secao: 'painel', rotulo: 'Painel', href: '/', icone: 'painel' },
   { secao: 'vendas', rotulo: 'Vendas', href: '/vendas', icone: 'vendas' },
+  { secao: 'faturamento', rotulo: 'Faturamento', href: '/faturamento', icone: 'moeda' },
   { secao: 'producao', rotulo: 'Produção', href: '/producao', icone: 'producao' },
   { secao: 'estoque', rotulo: 'Estoque', href: '/estoque', icone: 'estoque' },
   { secao: 'clientes', rotulo: 'Clientes', href: '/clientes', icone: 'clientes' },
