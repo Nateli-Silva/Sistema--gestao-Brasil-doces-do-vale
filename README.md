@@ -38,6 +38,36 @@ scripts/ testes/    dados de demonstração e testes automatizados
 - PJ exige endereço comercial; CPF/CNPJ são validados e únicos.
 - Novos sabores podem ser cadastrados a qualquer momento no Catálogo.
 
+## Publicar na internet (Render)
+
+O arquivo `render.yaml` já descreve tudo: servidor Node, **disco persistente** para os dados e deploy automático.
+
+1. Crie uma conta em <https://render.com> entrando com o GitHub e autorize o repositório.
+2. **New + → Blueprint** e escolha este repositório. O Render lê o `render.yaml`.
+3. Quando pedir **SENHA_ACESSO**, digite a senha que vocês usarão para entrar no sistema (não fica salva no código) e confirme com **Apply**. O plano com disco persistente é pago (em torno de US$ 7 por mês; confira em render.com/pricing).
+4. Aguarde o primeiro deploy terminar. O endereço aparece no topo do serviço (algo como `https://brasil-doces-do-vale.onrender.com`).
+5. Abra o endereço, entre com a senha e use normalmente. Para levar os dados de um computador/celular para lá: em **Backup**, baixe a cópia do ambiente antigo e restaure no novo.
+
+### Como ficam as atualizações
+
+Cada alteração aprovada no branch `main` é publicada sozinha em poucos minutos. Os dados ficam no disco persistente (`/var/data`) e **não** são apagados nas atualizações. Se algo falhar, veja **Logs** e **Events** do serviço no Render.
+
+### Cuidados
+
+- **Senha:** o sistema não inicia em produção sem `SENHA_ACESSO`. Para trocar a senha, mude a variável no Render (todas as sessões abertas são encerradas).
+- **Backup:** baixe uma cópia em **Backup** com frequência e guarde fora do sistema. Antes de restaurar, o sistema guarda uma cópia do que existia no próprio disco.
+- **Domínio próprio:** em *Settings → Custom Domains* do serviço.
+- Há apenas **uma instância** do serviço por causa do armazenamento em arquivos JSON; não aumente o número de instâncias.
+
+### Variáveis de ambiente
+
+| Variável | Para quê |
+|---|---|
+| `SENHA_ACESSO` | Senha de entrada (obrigatória em produção) |
+| `DIRETORIO_DADOS` | Pasta dos dados (`/var/data` no Render; `./dados` localmente) |
+| `PORT` / `PORTA` | Porta do servidor (o Render define `PORT`) |
+| `NODE_ENV` | `production` exige a senha para iniciar |
+
 ## Limitações conhecidas
 
-Não há login/perfis (a tela de Catálogo é aberta), nem cancelamento/estorno de venda. Persistência em JSON é adequada para uma única loja/processo.
+Uma senha única compartilhada (sem perfis por pessoa), nenhum cancelamento/estorno de venda, e persistência em arquivos JSON, adequada a uma loja com um único servidor.
