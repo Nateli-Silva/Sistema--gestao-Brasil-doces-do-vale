@@ -310,3 +310,14 @@ textarea { resize: vertical; }
 .recolhivel[open] summary { margin-bottom: 14px; }
 .detalhe-erro { white-space: pre-wrap; word-break: break-word; font-size: .8rem; color: var(--texto-suave); margin: 0; }
 .recolhivel .grade { margin-top: 4px; }
+
+/* campo de busca com sugestões abaixo do campo */
+.combo { position: relative; min-width: 0; }
+.combo input { width: 100%; }
+.combo__lista { position: absolute; top: calc(100% + 6px); left: 0; min-width: 100%; width: max-content; max-width: calc(100vw - 64px); z-index: 30; margin: 0; padding: 6px; list-style: none; max-height: 38vh; overflow-y: auto; background: #fff; border: 1.5px solid var(--caramelo); border-radius: 14px; box-shadow: 0 12px 28px rgb(74 45 37 / 22%); }
+.combo__lista[hidden] { display: none; }
+.combo__lista li { padding: 12px 12px; border-radius: 10px; cursor: pointer; font-weight: 500; }
+.combo__lista li[aria-selected='true'], .combo__lista li:hover { background: var(--caramelo-claro); }
+.combo__lista .combo__vazio { color: var(--texto-suave); cursor: default; font-weight: 400; }
+.combo__lista .combo__vazio:hover { background: transparent; }
+.item-producao-linha { scroll-margin-top: 76px; }
