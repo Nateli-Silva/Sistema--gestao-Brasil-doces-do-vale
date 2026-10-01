@@ -121,7 +121,7 @@ export function paginaPerfilCliente({ cliente, historico, indice }: DadosPerfilC
       : 'Sem compras registradas: o cadastro pode ser excluído de vez.'}</p>
     <div class="formulario__acoes">
       <form method="post" action="/clientes/${cliente.id}/arquivar"><button class="botao botao--suave" type="submit">${cliente.ativo ? 'Arquivar cadastro' : 'Reativar cadastro'}</button></form>
-      ${totalCompras === 0 ? html`<form method="post" action="/clientes/${cliente.id}/excluir" onsubmit="return confirm('Excluir ${cliente.nome.replace(/['"\\<>&]/g, '')} definitivamente?')"><button class="botao botao--perigo" type="submit">Excluir cliente</button></form>` : ''}
+      ${totalCompras === 0 ? html`<form method="post" action="/clientes/${cliente.id}/excluir" data-titulo="Excluir este cliente?" data-confirmar="O cadastro de ${cliente.nome} será excluído de vez. Essa ação não pode ser desfeita." data-botao="Excluir cliente"><button class="botao botao--perigo" type="submit">Excluir cliente</button></form>` : ''}
     </div>
   </div>`;
 

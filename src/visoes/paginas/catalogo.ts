@@ -29,7 +29,7 @@ function editorDoSabor({ produto, categoria }: ProdutoDetalhado): HtmlSeguro {
     </form>
     <div class="linha-sabor__acoes">
       <form method="post" action="/catalogo/sabores/${produto.id}/alternar"><button class="botao botao--fantasma botao--pequeno" type="submit">${produto.ativo ? 'Desativar' : 'Reativar'}</button></form>
-      <form method="post" action="/catalogo/sabores/${produto.id}/excluir" onsubmit="return confirm('Excluir o sabor ${produto.sabor.replace(/['"\\<>&]/g, '')}?')"><button class="botao botao--perigo botao--pequeno" type="submit">Excluir</button></form>
+      <form method="post" action="/catalogo/sabores/${produto.id}/excluir" data-titulo="Excluir este sabor?" data-confirmar="O sabor “${produto.sabor}” será excluído. Essa ação não pode ser desfeita." data-botao="Excluir sabor"><button class="botao botao--perigo botao--pequeno" type="submit">Excluir</button></form>
     </div>
   </div>`;
 }

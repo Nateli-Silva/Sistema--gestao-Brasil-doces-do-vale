@@ -68,6 +68,7 @@ export function paginaCompleta(dados: DadosPagina): string {
       ${dados.conteudo}
     </main>
   </div>
+  <script type="module" src="/js/confirmacao.js"></script>
   ${(dados.scripts ?? []).map((src) => html`<script type="module" src="${src}"></script>`)}
 </body>
 </html>`.valor}`;
