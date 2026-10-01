@@ -1,39 +1,20 @@
-import type { Producao } from '../../dominio/tipos.js';
+import type { Categoria, Producao } from '../../dominio/tipos.js';
 import type { ProdutoDetalhado } from '../../servicos/servico-catalogo.js';
 import { formatarData, formatarInteiro } from '../../utilitarios/formatacao.js';
 import { campoAreaTexto, campoTexto, type ContextoFormulario } from '../componentes/formulario.js';
 import { alerta, bolhaCategoria, cabecalhoPagina, cartao, estadoVazio, selo } from '../componentes/interface.js';
 import { botao } from '../componentes/interface.js';
-import { html, type HtmlSeguro } from '../html.js';
+import { html, jsonSeguro, type HtmlSeguro } from '../html.js';
 
 export interface DadosPaginaProducao {
+  readonly categorias: readonly Categoria[];
+  /** Linhas já preenchidas (após erro de validação). */
+  readonly linhas: ReadonlyArray<{ produtoId: string; quantidade: string }>;
   readonly produtos: readonly ProdutoDetalhado[];
   readonly recentes: readonly Producao[];
   readonly indice: ReadonlyMap<string, ProdutoDetalhado>;
   readonly formulario: ContextoFormulario;
   readonly erroGeral?: string;
-}
-
-function gradeDeQuantidades(dados: DadosPaginaProducao): HtmlSeguro {
-  if (dados.produtos.length === 0) return estadoVazio('Cadastre sabores no catálogo para registrar a produção.', botao('Ir ao catálogo', '/catalogo'));
-  const porCategoria = new Map<string, ProdutoDetalhado[]>();
-  for (const item of dados.produtos) porCategoria.set(item.categoria.id, [...(porCategoria.get(item.categoria.id) ?? []), item]);
-
-  return html`${[...porCategoria.values()].map((itens) => {
-    const categoria = itens[0]?.categoria;
-    if (!categoria) return '';
-    return html`<fieldset class="grupo-producao">
-      <legend>${bolhaCategoria(categoria, 30)} ${categoria.nome}</legend>
-      <div class="grupo-producao__itens">${itens.map(({ produto }) => {
-        const nome = `quantidade_${produto.id}`;
-        const erro = dados.formulario.erros[nome];
-        return html`<label class="item-producao ${erro ? 'item-producao--erro' : ''}">
-          <span>${produto.sabor}<small>em estoque: ${formatarInteiro(produto.quantidadeEstoque)}</small></span>
-          <input type="number" min="0" step="1" name="${nome}" value="${dados.formulario.valores[nome] ?? ''}" placeholder="0" inputmode="numeric">
-        </label>`;
-      })}</div>
-    </fieldset>`;
-  })}`;
 }
 
 function historico(dados: DadosPaginaProducao): HtmlSeguro {
@@ -46,18 +27,36 @@ function historico(dados: DadosPaginaProducao): HtmlSeguro {
     })}</tbody></table></div>`;
 }
 
+/** Um bloco por categoria; as linhas (sabor + quantidade) são criadas pelo script do navegador. */
+function blocoCategoria(categoria: Categoria): HtmlSeguro {
+  return html`<fieldset class="grupo-producao" data-categoria="${categoria.id}">
+    <legend>${bolhaCategoria(categoria, 30)} ${categoria.nome}</legend>
+    <div class="grupo-producao__itens" data-linhas></div>
+    <button type="button" class="botao botao--fantasma botao--pequeno" data-adicionar-sabor>+ Outro sabor de ${categoria.nome}</button>
+  </fieldset>`;
+}
+
 export function paginaProducao(dados: DadosPaginaProducao): HtmlSeguro {
   const erroItens = dados.formulario.erros.itens ?? dados.erroGeral;
-  const formulario = html`${erroItens ? alerta(erroItens) : ''}
-    <form method="post" action="/producao" class="formulario">
+  // Sabores enviados ao script do navegador, que monta o seletor de cada categoria.
+  const catalogoCliente = {
+    produtos: dados.produtos.map(({ produto, categoria }) => ({ id: produto.id, categoriaId: categoria.id, sabor: produto.sabor })),
+    linhas: dados.linhas,
+  };
+  const formulario = dados.produtos.length === 0
+    ? estadoVazio('Cadastre sabores no catálogo para registrar a produção.', botao('Ir ao catálogo', '/catalogo'))
+    : html`${erroItens ? alerta(erroItens) : ''}
+    <form method="post" action="/producao" class="formulario" data-formulario-producao>
       <div class="formulario--grade">
         ${campoTexto(dados.formulario, { nome: 'data', rotulo: 'Data da produção', tipo: 'date', obrigatorio: true })}
         ${campoAreaTexto(dados.formulario, { nome: 'observacao', rotulo: 'Observação', placeholder: 'Ex.: lote da encomenda de sábado' })}
       </div>
-      <p class="subtitulo">Informe só o que foi produzido. Cada quantidade entra automaticamente no estoque.</p>
-      ${gradeDeQuantidades(dados)}
+      <p class="subtitulo">Em cada categoria, escolha o sabor e informe a quantidade produzida. Deixe em branco o que não foi feito. Cada quantidade entra automaticamente no estoque. Falta um sabor? <a href="/catalogo">Cadastre no catálogo</a>.</p>
+      ${dados.categorias.map(blocoCategoria)}
+      <div class="total-venda"><span>Total produzido</span><strong data-total>0 un.</strong></div>
       <div class="formulario__acoes"><button class="botao botao--primario" type="submit">Registrar produção</button></div>
-    </form>`;
+    </form>
+    <script type="application/json" id="dados-producao">${jsonSeguro(catalogoCliente)}</script>`;
   return html`${cabecalhoPagina('Produção diária', 'Registre o que saiu da cozinha hoje.')}
   <div class="grade grade--producao">
     ${cartao('Registrar produção', formulario)}

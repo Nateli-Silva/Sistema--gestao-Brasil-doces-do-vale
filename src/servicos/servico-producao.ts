@@ -7,7 +7,6 @@ import type { ServicoEstoque, PedidoMovimento } from './servico-estoque.js';
 export interface DadosProducaoDiaria {
   readonly data: string;
   readonly observacao: string;
-  /** Apenas itens com quantidade informada; chave de erro de cada linha é `quantidade_<produtoId>`. */
   readonly itens: readonly PedidoMovimento[];
 }
 
@@ -18,8 +17,9 @@ export class ServicoProducao {
     private readonly estoque: ServicoEstoque,
   ) {}
 
-  registrar(dados: DadosProducaoDiaria): Producao[] {
-    this.validar(dados);
+  registrar(entrada: DadosProducaoDiaria): Producao[] {
+    this.validar(entrada);
+    const dados = { ...entrada, itens: this.consolidar(entrada.itens) };
     const producoes = this.repos.producoes.inserirVarios(
       dados.itens.map((item) => ({ data: dados.data, produtoId: item.produtoId, quantidade: item.quantidade, observacao: dados.observacao })),
     );
@@ -43,14 +43,21 @@ export class ServicoProducao {
     return this.listarDoDia(data).reduce((soma, p) => soma + p.quantidade, 0);
   }
 
+  /** Soma linhas repetidas do mesmo sabor em um único lançamento. */
+  private consolidar(itens: readonly PedidoMovimento[]): PedidoMovimento[] {
+    const soma = new Map<string, number>();
+    for (const item of itens) soma.set(item.produtoId, (soma.get(item.produtoId) ?? 0) + item.quantidade);
+    return [...soma].map(([produtoId, quantidade]) => ({ produtoId, quantidade }));
+  }
+
   private validar(dados: DadosProducaoDiaria): void {
     const erros: Record<string, string> = {};
     if (!/^\d{4}-\d{2}-\d{2}$/.test(dados.data)) erros.data = 'Informe a data da produção.';
     else if (dados.data > hojeIso()) erros.data = 'A data não pode ser futura.';
     if (dados.itens.length === 0) erros.itens = 'Informe a quantidade produzida de ao menos um sabor.';
     for (const item of dados.itens) {
-      if (!this.repos.produtos.buscarPorId(item.produtoId)) erros.itens = 'Há um sabor inexistente na lista.';
-      else if (!Number.isInteger(item.quantidade) || item.quantidade <= 0) erros[`quantidade_${item.produtoId}`] = 'Quantidade inválida.';
+      if (!this.repos.produtos.buscarPorId(item.produtoId)) erros.itens = 'Escolha o sabor em todas as linhas.';
+      else if (!Number.isInteger(item.quantidade) || item.quantidade <= 0) erros.itens = 'Informe quantidades inteiras maiores que zero.';
     }
     if (Object.keys(erros).length > 0) throw new ErroDeValidacao(erros);
   }

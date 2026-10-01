@@ -45,6 +45,11 @@ export class RepositorioJson<T extends Entidade> {
     return entidade;
   }
 
+  remover(id: string): void {
+    this.itens = this.itens.filter((item) => item.id !== id);
+    this.persistir();
+  }
+
   private carregar(): T[] {
     if (!fs.existsSync(this.arquivo)) return [];
     return JSON.parse(fs.readFileSync(this.arquivo, 'utf-8')) as T[];

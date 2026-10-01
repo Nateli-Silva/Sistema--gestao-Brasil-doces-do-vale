@@ -19,14 +19,17 @@ function formularioNovoSabor(categorias: readonly Categoria[], contexto: Context
 function linhaSabor(detalhe: ProdutoDetalhado): HtmlSeguro {
   const { produto } = detalhe;
   return html`<li class="linha-sabor ${produto.ativo ? '' : 'linha-sabor--inativa'}">
-    <div class="linha-sabor__nome"><strong>${produto.sabor}</strong>${produto.ativo ? '' : selo('Inativo', 'neutro')}</div>
     <form method="post" action="/catalogo/sabores/${produto.id}" class="linha-sabor__edicao">
-      <label><span class="sr-only">Preço</span><input name="preco" value="${centavosParaCampo(produto.precoCentavos)}" inputmode="decimal" aria-label="Preço em reais" size="6"></label>
-      <label><span class="sr-only">Mínimo</span><input name="estoqueMinimo" type="number" min="0" value="${produto.estoqueMinimo}" aria-label="Estoque mínimo" size="3"></label>
+      <label class="linha-sabor__campo linha-sabor__campo--nome"><span>Sabor ${produto.ativo ? '' : selo('Inativo', 'neutro')}</span><input name="sabor" value="${produto.sabor}" required aria-label="Nome do sabor"></label>
+      <label class="linha-sabor__campo"><span>Preço (R$)</span><input name="preco" value="${centavosParaCampo(produto.precoCentavos)}" inputmode="decimal" required aria-label="Preço em reais"></label>
+      <label class="linha-sabor__campo"><span>Mínimo</span><input name="estoqueMinimo" type="number" min="0" value="${produto.estoqueMinimo}" required aria-label="Estoque mínimo"></label>
       <button class="botao botao--suave botao--pequeno" type="submit">Salvar</button>
     </form>
-    <form method="post" action="/catalogo/sabores/${produto.id}/alternar"><button class="botao botao--fantasma botao--pequeno" type="submit">${produto.ativo ? 'Desativar' : 'Reativar'}</button></form>
-    <span class="linha-sabor__preco">${formatarMoeda(produto.precoCentavos)}</span>
+    <div class="linha-sabor__acoes">
+      <small>Em estoque: ${produto.quantidadeEstoque} · ${formatarMoeda(produto.precoCentavos)}</small>
+      <form method="post" action="/catalogo/sabores/${produto.id}/alternar"><button class="botao botao--fantasma botao--pequeno" type="submit">${produto.ativo ? 'Desativar' : 'Reativar'}</button></form>
+      <form method="post" action="/catalogo/sabores/${produto.id}/excluir" onsubmit="return confirm('Excluir o sabor ${produto.sabor.replace(/['"\\<>&]/g, '')}?')"><button class="botao botao--perigo botao--pequeno" type="submit">Excluir</button></form>
+    </div>
   </li>`;
 }
 

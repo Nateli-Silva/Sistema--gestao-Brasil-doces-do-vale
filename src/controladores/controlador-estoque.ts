@@ -13,14 +13,25 @@ export class ControladorEstoque extends ControladorBase {
     super();
   }
 
+  /** Aceita `?categoria=<id>` e `?sabor=<id>`; valores inválidos são ignorados. */
   exibir = (req: Request, res: Response): void => {
+    const produtos = this.catalogo.listarProdutos({ somenteAtivos: true });
+    const categorias = this.catalogo.listarCategorias();
+    const sabor = produtos.find((p) => p.produto.id === req.query.sabor);
+    const categoria = categorias.find((c) => c.id === (sabor?.categoria.id ?? req.query.categoria));
+
     this.renderizar(
       req,
       res,
       'Estoque',
       paginaEstoque({
-        produtos: this.catalogo.listarProdutos({ somenteAtivos: true }),
-        movimentos: this.estoque.listarMovimentosRecentes(12),
+        categorias,
+        produtos,
+        categoriaSelecionada: categoria,
+        saborSelecionado: sabor,
+        resumoSabor: sabor ? this.estoque.resumirSabor(sabor.produto.id) : undefined,
+        produzidoPorSabor: this.estoque.totalProduzidoPorSabor(),
+        movimentos: this.estoque.listarMovimentosRecentes(8),
         indice: this.catalogo.indexarProdutos(),
       }),
     );
