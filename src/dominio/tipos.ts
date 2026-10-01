@@ -94,10 +94,25 @@ export type TipoCliente = Cliente['tipo'];
 export const FORMAS_PAGAMENTO = ['PIX', 'DINHEIRO', 'CARTAO', 'FATURADO'] as const;
 export type FormaPagamento = (typeof FORMAS_PAGAMENTO)[number];
 
+export const FORMATOS_VENDA = ['UNIDADE', 'CAIXA'] as const;
+export type FormatoVenda = (typeof FORMATOS_VENDA)[number];
+
+/**
+ * Item vendido. Pode ser por unidade ou por caixa; a caixa traz quantidades variáveis de unidades.
+ * O estoque sempre é controlado em unidades.
+ */
 export interface ItemVenda {
   readonly produtoId: string;
+  readonly formato: FormatoVenda;
+  /** Unidades que saem do estoque (no formato CAIXA: caixas × unidades por caixa). */
   readonly quantidade: number;
-  /** Preço praticado no momento da venda (não muda se o preço do produto mudar depois). */
+  /** Número de caixas vendidas (somente formato CAIXA). */
+  readonly caixas: number | null;
+  /** Unidades dentro de cada caixa (somente formato CAIXA). */
+  readonly unidadesPorCaixa: number | null;
+  /** Valor combinado para o item inteiro, definido na hora da venda. */
+  readonly subtotalCentavos: number;
+  /** Valor médio por unidade (subtotal ÷ unidades), apenas para referência. */
   readonly precoUnitarioCentavos: number;
 }
 

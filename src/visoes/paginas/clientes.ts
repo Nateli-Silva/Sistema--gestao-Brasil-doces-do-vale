@@ -5,6 +5,7 @@ import { formatarCep, formatarCnpj, formatarCpf, formatarData, formatarDataHora,
 import { campoAreaTexto, campoTexto, type ContextoFormulario } from '../componentes/formulario.js';
 import { alerta, bolhaCategoria, botao, cabecalhoPagina, cartao, estadoVazio, indicador, selo } from '../componentes/interface.js';
 import { iconeInterface } from '../componentes/icones.js';
+import { descricaoItem } from '../componentes/venda.js';
 import { html, type HtmlSeguro } from '../html.js';
 
 export function documentoFormatado(cliente: Cliente): string {
@@ -107,7 +108,7 @@ export function paginaPerfilCliente({ cliente, historico, indice }: DadosPerfilC
       <thead><tr><th>Data</th><th>Itens</th><th>Pagamento</th><th class="num">Total</th></tr></thead>
       <tbody>${historico.vendas.map((v) => html`<tr>
         <td><a href="/vendas/${v.id}">${formatarDataHora(v.data)}</a></td>
-        <td>${v.itens.map((i) => html`<span class="ficha">${i.quantidade}× ${indice.get(i.produtoId)?.produto.sabor ?? '—'}</span>`)}</td>
+        <td>${v.itens.map((i) => html`<span class="ficha">${indice.get(i.produtoId)?.produto.sabor ?? '—'} · ${descricaoItem(i)}</span>`)}</td>
         <td>${v.formaPagamento}</td><td class="num"><strong>${formatarMoeda(v.totalCentavos)}</strong></td>
       </tr>`)}</tbody></table></div>`;
 

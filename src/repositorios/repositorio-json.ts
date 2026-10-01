@@ -11,8 +11,14 @@ import type { Entidade, NovaEntidade } from '../dominio/tipos.js';
 export class RepositorioJson<T extends Entidade> {
   private itens: T[];
 
-  constructor(private readonly arquivo: string) {
-    this.itens = this.carregar();
+  /**
+   * @param normalizar converte registros gravados em formatos antigos para o formato atual (opcional).
+   */
+  constructor(
+    private readonly arquivo: string,
+    normalizar: (registro: T) => T = (registro) => registro,
+  ) {
+    this.itens = this.carregar().map(normalizar);
   }
 
   listar(): readonly T[] {
