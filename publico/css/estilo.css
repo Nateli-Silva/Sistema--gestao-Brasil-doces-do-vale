@@ -280,5 +280,8 @@ textarea { resize: vertical; }
 @media print { .lateral, .menu--inferior, .topo-movel, .pagina__acoes { display: none; } }
 .formulario > .botao { align-self: flex-start; }
 .formulario--grade > .formulario__acoes { grid-column: 1 / -1; }
-.item-producao-linha { grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) 96px auto; }
-@media (max-width: 860px) { .item-producao-linha { grid-template-columns: minmax(0, 1fr) 96px; } .item-producao-linha select { grid-column: 1 / -1; } }
+.item-producao-linha { display: grid; grid-template-columns: minmax(0, 1fr) 84px 36px; gap: 8px; align-items: center; padding: 8px 10px; background: var(--creme); border: 1px solid var(--linha); border-radius: 14px; }
+.grupo-producao { display: flex; flex-direction: column; gap: 8px; }
+.grupo-producao__itens { display: flex; flex-direction: column; gap: 8px; }
+.grupo-producao > .botao { align-self: flex-start; }
+.item-producao-linha .botao { padding: 6px 0; font-size: 1.2rem; line-height: 1; }

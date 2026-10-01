@@ -27,17 +27,20 @@ function historico(dados: DadosPaginaProducao): HtmlSeguro {
     })}</tbody></table></div>`;
 }
 
+/** Um bloco por categoria; as linhas (sabor + quantidade) são criadas pelo script do navegador. */
+function blocoCategoria(categoria: Categoria): HtmlSeguro {
+  return html`<fieldset class="grupo-producao" data-categoria="${categoria.id}">
+    <legend>${bolhaCategoria(categoria, 30)} ${categoria.nome}</legend>
+    <div class="grupo-producao__itens" data-linhas></div>
+    <button type="button" class="botao botao--fantasma botao--pequeno" data-adicionar-sabor>+ Outro sabor de ${categoria.nome}</button>
+  </fieldset>`;
+}
+
 export function paginaProducao(dados: DadosPaginaProducao): HtmlSeguro {
   const erroItens = dados.formulario.erros.itens ?? dados.erroGeral;
-  // Catálogo enviado ao script do navegador: cada linha escolhe categoria e depois o sabor.
+  // Sabores enviados ao script do navegador, que monta o seletor de cada categoria.
   const catalogoCliente = {
-    categorias: dados.categorias.map((c) => ({ id: c.id, nome: c.nome })),
-    produtos: dados.produtos.map(({ produto, categoria }) => ({
-      id: produto.id,
-      categoriaId: categoria.id,
-      sabor: produto.sabor,
-      estoque: produto.quantidadeEstoque,
-    })),
+    produtos: dados.produtos.map(({ produto, categoria }) => ({ id: produto.id, categoriaId: categoria.id, sabor: produto.sabor })),
     linhas: dados.linhas,
   };
   const formulario = dados.produtos.length === 0
@@ -48,10 +51,8 @@ export function paginaProducao(dados: DadosPaginaProducao): HtmlSeguro {
         ${campoTexto(dados.formulario, { nome: 'data', rotulo: 'Data da produção', tipo: 'date', obrigatorio: true })}
         ${campoAreaTexto(dados.formulario, { nome: 'observacao', rotulo: 'Observação', placeholder: 'Ex.: lote da encomenda de sábado' })}
       </div>
-      <h3 class="subtitulo-secao">O que foi produzido</h3>
-      <div class="itens-venda" data-itens></div>
-      <button type="button" class="botao botao--suave" data-adicionar-item>+ Adicionar sabor</button>
-      <p class="subtitulo">Escolha a categoria, depois o sabor. Cada quantidade entra automaticamente no estoque. Falta um sabor? <a href="/catalogo">Cadastre no catálogo</a>.</p>
+      <p class="subtitulo">Em cada categoria, escolha o sabor e informe a quantidade produzida. Deixe em branco o que não foi feito. Cada quantidade entra automaticamente no estoque. Falta um sabor? <a href="/catalogo">Cadastre no catálogo</a>.</p>
+      ${dados.categorias.map(blocoCategoria)}
       <div class="total-venda"><span>Total produzido</span><strong data-total>0 un.</strong></div>
       <div class="formulario__acoes"><button class="botao botao--primario" type="submit">Registrar produção</button></div>
     </form>

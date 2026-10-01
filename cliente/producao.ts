@@ -1,15 +1,9 @@
-/** Linhas dinâmicas do formulário de produção: categoria → sabor (filtrado) → quantidade. */
-
-interface CategoriaProducao {
-  readonly id: string;
-  readonly nome: string;
-}
+/** Formulário de produção: em cada categoria, linhas de "sabor (sugestão) + quantidade". */
 
 interface ProdutoProducao {
   readonly id: string;
   readonly categoriaId: string;
   readonly sabor: string;
-  readonly estoque: number;
 }
 
 interface LinhaInicial {
@@ -18,7 +12,6 @@ interface LinhaInicial {
 }
 
 interface DadosProducao {
-  readonly categorias: readonly CategoriaProducao[];
   readonly produtos: readonly ProdutoProducao[];
   readonly linhas: readonly LinhaInicial[];
 }
@@ -39,59 +32,53 @@ function opcao(valor: string, rotulo: string, selecionado = false): HTMLOptionEl
 
 function iniciar(formulario: HTMLFormElement): void {
   const dados = JSON.parse(obter<HTMLScriptElement>(document, '#dados-producao').textContent ?? '{}') as DadosProducao;
-  const container = obter<HTMLElement>(formulario, '[data-itens]');
   const totalEl = obter<HTMLElement>(formulario, '[data-total]');
-  const produtoPorId = new Map(dados.produtos.map((p) => [p.id, p]));
+  const categoriaDoProduto = new Map(dados.produtos.map((p) => [p.id, p.categoriaId]));
 
   const recalcular = (): void => {
     let total = 0;
-    container.querySelectorAll<HTMLElement>('.item-producao-linha').forEach((linha) => {
+    formulario.querySelectorAll<HTMLElement>('.item-producao-linha').forEach((linha) => {
       const quantidade = Number(obter<HTMLInputElement>(linha, 'input').value) || 0;
-      if (obter<HTMLSelectElement>(linha, 'select[name=produtoId]').value) total += quantidade;
+      if (obter<HTMLSelectElement>(linha, 'select').value) total += quantidade;
     });
     totalEl.textContent = `${total.toLocaleString('pt-BR')} un.`;
   };
 
-  /** Recarrega a lista de sabores da linha conforme a categoria escolhida. */
-  const preencherSabores = (linha: HTMLElement, categoriaId: string, produtoId = ''): void => {
-    const seletor = obter<HTMLSelectElement>(linha, 'select[name=produtoId]');
-    seletor.replaceChildren(opcao('', categoriaId ? 'Escolha o sabor…' : 'Escolha a categoria primeiro'));
-    dados.produtos
-      .filter((p) => p.categoriaId === categoriaId)
-      .forEach((p) => seletor.append(opcao(p.id, `${p.sabor} (estoque: ${p.estoque})`, p.id === produtoId)));
-    seletor.disabled = categoriaId === '';
-  };
-
-  const adicionarLinha = (produtoId = '', quantidade = ''): void => {
-    const categoriaInicial = produtoPorId.get(produtoId)?.categoriaId ?? '';
+  const adicionarLinha = (bloco: HTMLElement, produtoId = '', quantidade = ''): void => {
+    const categoriaId = bloco.dataset.categoria ?? '';
     const linha = document.createElement('div');
-    linha.className = 'item-venda item-producao-linha';
+    linha.className = 'item-producao-linha';
     linha.innerHTML = `
-      <select data-categoria aria-label="Categoria"></select>
       <select name="produtoId" aria-label="Sabor"></select>
       <input name="quantidade" type="number" min="1" step="1" inputmode="numeric" placeholder="Qtd." aria-label="Quantidade produzida">
-      <button type="button" class="botao botao--fantasma botao--pequeno" aria-label="Remover linha">Remover</button>`;
-    const categoria = obter<HTMLSelectElement>(linha, '[data-categoria]');
-    categoria.append(opcao('', 'Categoria…'));
-    dados.categorias.forEach((c) => categoria.append(opcao(c.id, c.nome, c.id === categoriaInicial)));
-    preencherSabores(linha, categoriaInicial, produtoId);
+      <button type="button" class="botao botao--fantasma botao--pequeno" aria-label="Remover linha" title="Remover">×</button>`;
+    const seletor = obter<HTMLSelectElement>(linha, 'select');
+    seletor.append(opcao('', 'Escolha o sabor…'));
+    dados.produtos
+      .filter((p) => p.categoriaId === categoriaId)
+      .forEach((p) => seletor.append(opcao(p.id, p.sabor, p.id === produtoId)));
     obter<HTMLInputElement>(linha, 'input').value = quantidade;
-    categoria.addEventListener('change', () => preencherSabores(linha, categoria.value));
+    const area = obter<HTMLElement>(bloco, '[data-linhas]');
     obter<HTMLButtonElement>(linha, 'button').addEventListener('click', () => {
-      if (container.children.length > 1) linha.remove();
+      // Cada categoria mantém ao menos uma linha; se for a última, apenas limpa.
+      if (area.children.length > 1) linha.remove();
+      else {
+        seletor.value = '';
+        obter<HTMLInputElement>(linha, 'input').value = '';
+      }
       recalcular();
     });
-    container.append(linha);
+    area.append(linha);
   };
 
-  container.addEventListener('input', recalcular);
-  container.addEventListener('change', recalcular);
-  obter<HTMLButtonElement>(formulario, '[data-adicionar-item]').addEventListener('click', () => {
-    adicionarLinha();
-    recalcular();
+  formulario.querySelectorAll<HTMLElement>('[data-categoria]').forEach((bloco) => {
+    const iniciais = dados.linhas.filter((l) => categoriaDoProduto.get(l.produtoId) === bloco.dataset.categoria);
+    (iniciais.length > 0 ? iniciais : [{ produtoId: '', quantidade: '' }]).forEach((l) => adicionarLinha(bloco, l.produtoId, l.quantidade));
+    obter<HTMLButtonElement>(bloco, '[data-adicionar-sabor]').addEventListener('click', () => adicionarLinha(bloco));
   });
 
-  (dados.linhas.length > 0 ? dados.linhas : [{ produtoId: '', quantidade: '' }]).forEach((l) => adicionarLinha(l.produtoId, l.quantidade));
+  formulario.addEventListener('input', recalcular);
+  formulario.addEventListener('change', recalcular);
   recalcular();
 }
 
