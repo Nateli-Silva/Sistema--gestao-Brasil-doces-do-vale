@@ -63,8 +63,9 @@ export function paginaFormularioVenda(dados: DadosFormularioVenda): HtmlSeguro {
     return {
       id: c.id,
       rotulo: c.nome,
-      detalhe: c.tipo === 'PJ' ? `${c.razaoSocial} · CNPJ ${formatarCnpj(documento)}` : `Pessoa física · CPF ${formatarCpf(documento)}`,
-      busca: `${documento} ${c.telefone}`,
+      // Abaixo do nome: CPF (pessoa física) ou CNPJ (empresa). A razão social e o telefone só ajudam na busca.
+      detalhe: c.tipo === 'PJ' ? `CNPJ ${formatarCnpj(documento)}` : `CPF ${formatarCpf(documento)}`,
+      busca: `${documento} ${c.telefone} ${c.tipo === 'PJ' ? c.razaoSocial : ''}`,
     };
   });
   const erroItens = dados.formulario.erros.itens ?? dados.erroGeral;
