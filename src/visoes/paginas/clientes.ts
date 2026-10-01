@@ -23,19 +23,20 @@ function seloTipo(cliente: Cliente): HtmlSeguro {
 
 // ---------- Lista ----------
 
-export function paginaListaClientes(clientes: readonly Cliente[], busca: string): HtmlSeguro {
+export function paginaListaClientes(clientes: readonly Cliente[], busca: string, arquivados: boolean): HtmlSeguro {
   const tabela = clientes.length === 0
     ? estadoVazio(busca ? 'Nenhum cliente encontrado para a busca.' : 'Nenhum cliente cadastrado ainda.', botao('Cadastrar cliente', '/clientes/novo', { icone: 'mais' }))
     : html`<div class="tabela-rolavel"><table class="tabela tabela--cartoes tabela--linhas-clicaveis">
       <thead><tr><th>Cliente</th><th>Documento</th><th>Contato</th><th>Cidade</th></tr></thead>
       <tbody>${clientes.map((c) => html`<tr>
-        <td data-rotulo="Cliente"><a class="celula-cliente" href="/clientes/${c.id}"><span class="avatar">${iconeInterface(c.tipo === 'PJ' ? 'predio' : 'pessoa', 18)}</span><span>${c.nome}${c.tipo === 'PJ' ? html`<small>${c.razaoSocial}</small>` : ''}</span></a></td>
+        <td data-rotulo="Cliente"><a class="celula-cliente" href="/clientes/${c.id}"><span class="avatar">${iconeInterface(c.tipo === 'PJ' ? 'predio' : 'pessoa', 18)}</span><span>${c.nome} ${c.ativo ? '' : selo('Arquivado', 'neutro')}${c.tipo === 'PJ' ? html`<small>${c.razaoSocial}</small>` : ''}</span></a></td>
         <td data-rotulo="Documento">${seloTipo(c)} <span class="doc">${documentoFormatado(c)}</span></td>
         <td data-rotulo="Contato">${c.telefone}<small>${c.email}</small></td>
         <td data-rotulo="Cidade">${c.endereco ? `${c.endereco.cidade}/${c.endereco.uf}` : '—'}</td>
       </tr>`)}</tbody></table></div>`;
   return html`${cabecalhoPagina('Clientes', 'Pessoas físicas e empresas que compram da doceria.', botao('Novo cliente', '/clientes/novo', { icone: 'mais' }))}
-  ${cartao('Todos os clientes', html`<form class="busca" method="get" action="/clientes" role="search">${iconeInterface('busca', 18)}<input type="search" name="busca" value="${busca}" placeholder="Buscar por nome, e-mail ou documento" aria-label="Buscar clientes"><button class="botao botao--suave" type="submit">Buscar</button></form>${tabela}`)}`;
+  ${cartao('Todos os clientes', html`<form class="busca" method="get" action="/clientes" role="search">${iconeInterface('busca', 18)}<input type="search" name="busca" value="${busca}" placeholder="Buscar por nome, e-mail ou documento" aria-label="Buscar clientes"><button class="botao botao--suave" type="submit">Buscar</button></form>${tabela}
+    <p class="subtitulo"><a href="/clientes?${new URLSearchParams({ ...(busca ? { busca } : {}), ...(arquivados ? {} : { arquivados: '1' }) }).toString()}">${arquivados ? 'Ocultar clientes arquivados' : 'Mostrar clientes arquivados'}</a></p>`)}`;
 }
 
 // ---------- Formulário ----------
@@ -112,6 +113,18 @@ export function paginaPerfilCliente({ cliente, historico, indice }: DadosPerfilC
         <td data-rotulo="Pagamento">${v.formaPagamento}</td><td class="num" data-rotulo="Total"><strong>${formatarMoeda(v.totalCentavos)}</strong></td>
       </tr>`)}</tbody></table></div>`;
 
+  const totalCompras = historico.vendas.length;
+  const gerenciar = html`<div class="gerenciar">
+    ${cliente.ativo ? '' : html`<p class="aviso aviso--erro">Cliente arquivado: não aparece nas buscas nem em novas vendas.</p>`}
+    <p class="subtitulo">${totalCompras > 0
+      ? `Esta cliente tem ${totalCompras} ${totalCompras === 1 ? 'compra registrada' : 'compras registradas'}, então não pode ser excluída (o histórico e o faturamento seriam perdidos). Você pode arquivar o cadastro.`
+      : 'Sem compras registradas: o cadastro pode ser excluído de vez.'}</p>
+    <div class="formulario__acoes">
+      <form method="post" action="/clientes/${cliente.id}/arquivar"><button class="botao botao--suave" type="submit">${cliente.ativo ? 'Arquivar cadastro' : 'Reativar cadastro'}</button></form>
+      ${totalCompras === 0 ? html`<form method="post" action="/clientes/${cliente.id}/excluir" onsubmit="return confirm('Excluir ${cliente.nome.replace(/['"\\<>&]/g, '')} definitivamente?')"><button class="botao botao--perigo" type="submit">Excluir cliente</button></form>` : ''}
+    </div>
+  </div>`;
+
   return html`${cabecalhoPagina(cliente.nome, cliente.tipo === 'PJ' ? 'Pessoa jurídica' : 'Pessoa física', [botao('Editar', `/clientes/${cliente.id}/editar`, { icone: 'editar', variante: 'suave' }), botao('Nova venda', `/vendas/nova?cliente=${cliente.id}`, { icone: 'mais' })])}
   <div class="grade grade--indicadores">
     ${indicador('Total gasto', formatarMoeda(historico.totalGastoCentavos), 'moeda')}
@@ -122,5 +135,6 @@ export function paginaPerfilCliente({ cliente, historico, indice }: DadosPerfilC
   <div class="grade grade--duas grade--perfil">
     ${cartao('Dados do cliente', contato)}
     ${cartao('Histórico de compras', compras)}
-  </div>`;
+  </div>
+  ${cartao('Gerenciar cadastro', gerenciar)}`;
 }

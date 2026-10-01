@@ -21,7 +21,8 @@ export class ControladorCliente extends ControladorBase {
 
   listar = (req: Request, res: Response): void => {
     const busca = typeof req.query.busca === 'string' ? req.query.busca : '';
-    this.renderizar(req, res, 'Clientes', paginaListaClientes(this.clientes.listar(busca), busca));
+    const arquivados = req.query.arquivados === '1';
+    this.renderizar(req, res, 'Clientes', paginaListaClientes(this.clientes.listar(busca, arquivados), busca, arquivados));
   };
 
   exibir = (req: Request, res: Response): void => {
@@ -32,6 +33,23 @@ export class ControladorCliente extends ControladorBase {
       cliente.nome,
       paginaPerfilCliente({ cliente, historico: this.vendas.historicoDoCliente(cliente.id), indice: this.catalogo.indexarProdutos() }),
     );
+  };
+
+  excluir = (req: Request, res: Response): void => {
+    const id = String(req.params.id);
+    try {
+      const nome = this.clientes.buscarPorId(id).nome;
+      this.clientes.excluir(id);
+      this.redirecionar(res, '/clientes', `${nome} foi excluído(a).`);
+    } catch (erro) {
+      const { erroGeral } = this.tratarFalha(erro);
+      this.redirecionar(res, `/clientes/${id}`, erroGeral ?? 'Não foi possível excluir.');
+    }
+  };
+
+  alternarArquivo = (req: Request, res: Response): void => {
+    const cliente = this.clientes.alternarArquivo(String(req.params.id));
+    this.redirecionar(res, `/clientes/${cliente.id}`, cliente.ativo ? 'Cadastro reativado.' : 'Cliente arquivado: some das buscas, mas o histórico foi mantido.');
   };
 
   formularioNovo = (req: Request, res: Response): void => {

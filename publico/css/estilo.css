@@ -413,3 +413,5 @@ button, .botao, .chip { -webkit-tap-highlight-color: transparent; }
 .doc { white-space: nowrap; }
 .mostrar-senha { display: flex; align-items: center; gap: 8px; font-size: .9rem; color: var(--texto-suave); }
 .mostrar-senha input { width: auto; accent-color: var(--caramelo); }
+.gerenciar { display: flex; flex-direction: column; gap: 12px; }
+.gerenciar .formulario__acoes { justify-content: flex-start; }

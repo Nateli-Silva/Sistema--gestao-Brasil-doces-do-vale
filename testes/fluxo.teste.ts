@@ -252,3 +252,38 @@ test('cadastro de sabor só com categoria e nome; valor é definido na venda', (
   assert.equal(servicos.catalogo.atualizarProduto(novo.id, { sabor: 'Cereja', precoCentavos: 0, estoqueMinimo: 3 }).estoqueMinimo, 3);
   assert.throws(() => servicos.catalogo.atualizarProduto(novo.id, { sabor: 'Cereja', precoCentavos: -5, estoqueMinimo: 3 }), ErroDeValidacao);
 });
+
+test('cliente sem compras pode ser excluído; com compras só pode ser arquivado', () => {
+  const { servicos, sabor, cliente } = novoCenario();
+  const vazio = { cep: '', logradouro: '', numero: '', complemento: '', bairro: '', cidade: '', uf: '' };
+  const semCompras = servicos.clientes.cadastrar({ tipo: 'PF', nome: 'Bia', documento: '111.444.777-35', razaoSocial: '', responsavel: '', telefone: '12991234568', email: '', observacao: '', endereco: vazio });
+  servicos.clientes.excluir(semCompras.id);
+  assert.equal(servicos.clientes.listar('', true).some((c) => c.id === semCompras.id), false);
+
+  servicos.producao.registrar({ data: hojeIso(), observacao: '', itens: [{ produtoId: sabor.id, quantidade: 10 }] });
+  servicos.vendas.registrar({ clienteId: cliente.id, formaPagamento: 'PIX', observacao: '', itens: [{ produtoId: sabor.id, quantidade: 2 }] });
+  assert.throws(() => servicos.clientes.excluir(cliente.id), ErroDeNegocio);
+  assert.equal(servicos.vendas.listarDoCliente(cliente.id).length, 1); // histórico intacto
+
+  // arquivar: some da lista e não vende mais, mas o histórico e o faturamento continuam
+  assert.equal(servicos.clientes.alternarArquivo(cliente.id).ativo, false);
+  assert.equal(servicos.clientes.listar().some((c) => c.id === cliente.id), false);
+  assert.equal(servicos.clientes.listar('', true).some((c) => c.id === cliente.id), true);
+  assert.throws(() => servicos.vendas.registrar({ clienteId: cliente.id, formaPagamento: 'PIX', observacao: '', itens: [{ produtoId: sabor.id, quantidade: 1 }] }), ErroDeValidacao);
+  assert.equal(servicos.painel.montar().melhorCliente?.cliente.id, cliente.id);
+
+  // reativar
+  assert.equal(servicos.clientes.alternarArquivo(cliente.id).ativo, true);
+  assert.equal(servicos.clientes.listar().some((c) => c.id === cliente.id), true);
+  // editar não desfaz o arquivamento
+  servicos.clientes.alternarArquivo(cliente.id);
+  const editado = servicos.clientes.atualizar(cliente.id, { tipo: 'PF', nome: 'Ana Maria', documento: '529.982.247-25', razaoSocial: '', responsavel: '', telefone: '12991234567', email: '', observacao: '', endereco: vazio });
+  assert.equal(editado.ativo, false);
+});
+
+test('clientes gravados antes do arquivamento continuam ativos', () => {
+  const pasta = fs.mkdtempSync(path.join(os.tmpdir(), 'doces-cliente-antigo-'));
+  fs.writeFileSync(path.join(pasta, 'clientes.json'), JSON.stringify([{ id: 'c1', criadoEm: '2026-01-01T00:00:00.000Z', tipo: 'PF', nome: 'Antiga', cpf: '52998224725', endereco: null, telefone: '12991234567', email: '', observacao: '' }]));
+  const servicos = criarServicos(pasta);
+  assert.equal(servicos.clientes.listar()[0]?.ativo, true);
+});

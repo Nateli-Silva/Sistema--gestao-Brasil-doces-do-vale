@@ -15,6 +15,11 @@ export interface Repositorios {
 /** Item como gravado antes das caixas: só unidades e preço unitário. */
 type ItemVendaAntigo = Pick<ItemVenda, 'produtoId' | 'quantidade' | 'precoUnitarioCentavos'> & Partial<ItemVenda>;
 
+/** Clientes gravados antes do arquivamento não tinham o campo "ativo": todos eram ativos. */
+function normalizarCliente(cliente: Cliente): Cliente {
+  return { ...cliente, ativo: (cliente as Partial<Pick<Cliente, 'ativo'>>).ativo ?? true };
+}
+
 function normalizarVenda(venda: Venda): Venda {
   return {
     ...venda,
@@ -38,7 +43,7 @@ export function criarRepositorios(armazenamento: ArmazenamentoDados): Repositori
     produtos: new RepositorioJson<Produto>(armazenamento, 'produtos'),
     movimentos: new RepositorioJson<MovimentoEstoque>(armazenamento, 'movimentos'),
     producoes: new RepositorioJson<Producao>(armazenamento, 'producoes'),
-    clientes: new RepositorioJson<Cliente>(armazenamento, 'clientes'),
+    clientes: new RepositorioJson<Cliente>(armazenamento, 'clientes', normalizarCliente),
     vendas: new RepositorioJson<Venda>(armazenamento, 'vendas', normalizarVenda),
   };
 }
