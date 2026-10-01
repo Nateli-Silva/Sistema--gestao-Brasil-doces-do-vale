@@ -263,15 +263,17 @@ textarea { resize: vertical; }
   .grade--duas, .grade--perfil, .grade--producao, .grade--estoque { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 860px) {
-  .app { grid-template-columns: minmax(0, 1fr); }
+  /* a 1ª linha (cabeçalho + menu) tem altura própria; só o conteúdo estica em páginas curtas */
+  .app { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto auto 1fr; }
   .lateral { display: none; }
   .topo-movel { display: flex; padding: 12px 16px; background: var(--chocolate); color: var(--creme); position: sticky; top: 0; z-index: 5; }
   .topo-movel a { color: inherit; }
-  .pagina { padding: 20px 16px 96px; gap: 18px; }
+  .pagina { padding: 20px 16px 48px; gap: 18px; }
   h1 { font-size: 1.55rem; }
+  /* Menu fixo logo abaixo do cabeçalho: o rodapé fica livre (a hospedagem gratuita põe um selo no canto inferior). */
   .menu--inferior {
-    display: grid; grid-template-columns: repeat(7, 1fr); position: fixed; inset: auto 0 0 0; z-index: 10;
-    background: var(--papel); border-top: 1px solid var(--linha); padding: 6px 4px calc(6px + env(safe-area-inset-bottom)); box-shadow: 0 -6px 20px rgb(74 45 37 / 10%);
+    display: grid; grid-template-columns: repeat(7, 1fr); position: sticky; top: 56px; z-index: 5;
+    background: var(--papel); border-bottom: 1px solid var(--linha); padding: 4px; box-shadow: 0 6px 16px rgb(74 45 37 / 8%);
   }
   .menu--inferior .menu__item { flex-direction: column; gap: 2px; padding: 6px 2px; font-size: .68rem; color: var(--texto-suave); border-radius: 12px; }
   .menu--inferior .menu__item:hover { background: transparent; color: var(--chocolate); }
@@ -346,7 +348,6 @@ button, .botao, .chip { -webkit-tap-highlight-color: transparent; }
 .cartao-periodo__valor { font-family: var(--fonte-titulo); font-size: 1.5rem; line-height: 1.15; }
 .linha-atual td { background: #fdf3e3; }
 @media (max-width: 860px) {
-  .menu--inferior { grid-template-columns: repeat(7, 1fr); }
   .menu--inferior .menu__item { font-size: .6rem; }
 }
 .coluna { display: flex; flex-direction: column; gap: 20px; min-width: 0; }

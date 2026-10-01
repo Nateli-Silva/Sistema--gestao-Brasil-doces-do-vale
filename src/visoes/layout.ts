@@ -62,11 +62,11 @@ export function paginaCompleta(dados: DadosPagina): string {
       <div class="lateral__rodape"><p>Feito com carinho<br>e muito chocolate</p>${linksDeConta()}</div>
     </aside>
     <header class="topo-movel"><a class="marca" href="/">${logotipo(32)}<span class="marca__texto"><strong>Brasil Doces do Vale</strong></span></a>${linksDeConta()}</header>
+    ${menu('menu menu--inferior')}
     <main class="pagina">
       ${dados.aviso ? alerta(dados.aviso, 'sucesso') : ''}
       ${dados.conteudo}
     </main>
-    ${menu('menu menu--inferior')}
   </div>
   ${(dados.scripts ?? []).map((src) => html`<script type="module" src="${src}"></script>`)}
 </body>
