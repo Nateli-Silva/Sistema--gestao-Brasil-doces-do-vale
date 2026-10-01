@@ -215,14 +215,19 @@ textarea { resize: vertical; }
 
 /* catálogo */
 .lista-sabores { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
-.linha-sabor { display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--linha); }
+.linha-sabor { display: flex; flex-direction: column; gap: 8px; padding: 14px 0; border-bottom: 1px solid var(--linha); }
 .linha-sabor:last-child { border-bottom: 0; }
-.linha-sabor--inativa .linha-sabor__nome { opacity: .55; }
-.linha-sabor__nome { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.linha-sabor__preco { grid-row: 1; grid-column: 2; font-family: var(--fonte-titulo); font-weight: 600; }
-.linha-sabor__edicao { grid-column: 1; display: flex; gap: 8px; align-items: center; }
-.linha-sabor__edicao input { width: 84px; padding: 6px 10px; }
-.linha-sabor > form:last-of-type { grid-column: 2; justify-self: end; }
+.linha-sabor--inativa .linha-sabor__edicao { opacity: .6; }
+.linha-sabor__edicao { display: flex; gap: 8px; align-items: flex-end; flex-wrap: wrap; }
+.linha-sabor__campo { display: flex; flex-direction: column; gap: 3px; font-size: .72rem; color: var(--texto-suave); }
+.linha-sabor__campo span { display: flex; gap: 6px; align-items: center; }
+.linha-sabor__campo input { padding: 7px 10px; width: 92px; }
+.linha-sabor__campo--nome { flex: 1 1 160px; }
+.linha-sabor__campo--nome input { width: 100%; }
+.linha-sabor__acoes { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.linha-sabor__acoes small { flex: 1; }
+.botao--perigo { background: var(--critico-claro); color: #8f2e2d; }
+.botao--perigo:hover { background: #f2c4c1; color: #8f2e2d; }
 
 /* venda */
 .subtitulo-secao { font-family: var(--fonte-corpo); font-size: .82rem; text-transform: uppercase; letter-spacing: .08em; color: var(--texto-suave); }
@@ -275,3 +280,5 @@ textarea { resize: vertical; }
 @media print { .lateral, .menu--inferior, .topo-movel, .pagina__acoes { display: none; } }
 .formulario > .botao { align-self: flex-start; }
 .formulario--grade > .formulario__acoes { grid-column: 1 / -1; }
+.item-producao-linha { grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr) 96px auto; }
+@media (max-width: 860px) { .item-producao-linha { grid-template-columns: minmax(0, 1fr) 96px; } .item-producao-linha select { grid-column: 1 / -1; } }

@@ -70,3 +70,30 @@ test('sabor duplicado na mesma categoria é recusado; preço aceita vírgula', (
   assert.throws(() => servicos.catalogo.cadastrarSabor({ categoriaId: sabor.categoriaId, sabor: 'maracujá', precoCentavos: 100, estoqueMinimo: 1 }), ErroDeValidacao);
   assert.equal(converterParaCentavos('R$ 1.234,50'), 123450);
 });
+
+test('sabor pode ser renomeado; nome repetido na categoria é recusado', () => {
+  const { servicos, sabor } = novoCenario();
+  const outro = servicos.catalogo.cadastrarSabor({ categoriaId: sabor.categoriaId, sabor: 'Pistache', precoCentavos: 700, estoqueMinimo: 3 });
+  const renomeado = servicos.catalogo.atualizarProduto(sabor.id, { sabor: 'Maracujá com Chocolate', precoCentavos: 700, estoqueMinimo: 4 });
+  assert.equal(renomeado.sabor, 'Maracujá com Chocolate');
+  assert.throws(() => servicos.catalogo.atualizarProduto(outro.id, { sabor: 'maracujá com chocolate', precoCentavos: 700, estoqueMinimo: 3 }), ErroDeValidacao);
+  // manter o próprio nome ao editar só o preço é permitido
+  assert.doesNotThrow(() => servicos.catalogo.atualizarProduto(outro.id, { sabor: 'Pistache', precoCentavos: 750, estoqueMinimo: 3 }));
+});
+
+test('sabor sem histórico pode ser excluído; com produção só pode ser desativado', () => {
+  const { servicos, sabor } = novoCenario();
+  const novo = servicos.catalogo.cadastrarSabor({ categoriaId: sabor.categoriaId, sabor: 'Coco', precoCentavos: 500, estoqueMinimo: 2 });
+  servicos.catalogo.excluirProduto(novo.id);
+  assert.equal(servicos.catalogo.listarProdutos().some((p) => p.produto.id === novo.id), false);
+  servicos.producao.registrar({ data: hojeIso(), observacao: '', itens: [{ produtoId: sabor.id, quantidade: 5 }] });
+  assert.throws(() => servicos.catalogo.excluirProduto(sabor.id), ErroDeNegocio);
+  assert.equal(servicos.catalogo.alternarAtivo(sabor.id).ativo, false);
+});
+
+test('produção com o mesmo sabor em duas linhas é somada', () => {
+  const { servicos, sabor } = novoCenario();
+  servicos.producao.registrar({ data: hojeIso(), observacao: '', itens: [{ produtoId: sabor.id, quantidade: 5 }, { produtoId: sabor.id, quantidade: 7 }] });
+  assert.equal(servicos.catalogo.buscarProduto(sabor.id).quantidadeEstoque, 12);
+  assert.equal(servicos.producao.listarDoDia(hojeIso()).length, 1);
+});

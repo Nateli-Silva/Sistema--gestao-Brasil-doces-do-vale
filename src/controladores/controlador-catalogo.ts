@@ -37,6 +37,7 @@ export class ControladorCatalogo extends ControladorBase {
     const campos = lerCampos(req.body);
     try {
       this.catalogo.atualizarProduto(String(req.params.id), {
+        sabor: texto(campos, 'sabor'),
         precoCentavos: converterParaCentavos(texto(campos, 'preco')),
         estoqueMinimo: inteiro(texto(campos, 'estoqueMinimo')),
       });
@@ -44,6 +45,16 @@ export class ControladorCatalogo extends ControladorBase {
     } catch (erro) {
       const { erros, erroGeral } = this.tratarFalha(erro);
       this.redirecionar(res, '/catalogo', erroGeral ?? Object.values(erros)[0] ?? 'Não foi possível atualizar.');
+    }
+  };
+
+  excluirSabor = (req: Request, res: Response): void => {
+    try {
+      this.catalogo.excluirProduto(String(req.params.id));
+      this.redirecionar(res, '/catalogo', 'Sabor excluído.');
+    } catch (erro) {
+      const { erroGeral } = this.tratarFalha(erro);
+      this.redirecionar(res, '/catalogo', erroGeral ?? 'Não foi possível excluir.');
     }
   };
 

@@ -2,12 +2,12 @@ import type { Request, Response } from 'express';
 import type { ServicoCatalogo } from '../servicos/servico-catalogo.js';
 import type { ServicoProducao } from '../servicos/servico-producao.js';
 import { hojeIso } from '../utilitarios/formatacao.js';
-import { inteiro, lerCampos, texto, type CamposFormulario } from '../utilitarios/formulario.js';
+import { inteiro, lerCampos, lista, texto, type CamposFormulario } from '../utilitarios/formulario.js';
 import type { ContextoFormulario } from '../visoes/componentes/formulario.js';
 import { paginaProducao } from '../visoes/paginas/producao.js';
 import { ControladorBase } from './controlador-base.js';
 
-const PREFIXO_QUANTIDADE = 'quantidade_';
+type LinhaFormulario = { produtoId: string; quantidade: string };
 
 export class ControladorProducao extends ControladorBase {
   protected readonly secao = 'producao';
@@ -19,45 +19,50 @@ export class ControladorProducao extends ControladorBase {
   }
 
   exibir = (req: Request, res: Response): void => {
-    this.renderizarPagina(req, res, { valores: { data: hojeIso() }, erros: {} });
+    this.renderizarPagina(req, res, { valores: { data: hojeIso() }, erros: {} }, []);
   };
 
   registrar = (req: Request, res: Response): void => {
     const campos = lerCampos(req.body);
+    const linhas = this.lerLinhas(campos);
     try {
       const producoes = this.producao.registrar({
         data: texto(campos, 'data'),
         observacao: texto(campos, 'observacao'),
-        itens: this.extrairItens(campos),
+        itens: linhas.map((l) => ({ produtoId: l.produtoId, quantidade: inteiro(l.quantidade) })),
       });
       const total = producoes.reduce((soma, p) => soma + p.quantidade, 0);
       this.redirecionar(res, '/producao', `Produção registrada: ${total} unidades adicionadas ao estoque.`);
     } catch (erro) {
       const { erros, erroGeral } = this.tratarFalha(erro);
       res.status(422);
-      this.renderizarPagina(req, res, { valores: this.valoresPlanos(campos), erros }, erroGeral);
+      this.renderizarPagina(req, res, { valores: this.valoresPlanos(campos), erros }, linhas, erroGeral);
     }
   };
 
-  /** Linhas `quantidade_<produtoId>` preenchidas (vazio ou 0 é ignorado; valor inválido segue para validação). */
-  private extrairItens(campos: CamposFormulario): Array<{ produtoId: string; quantidade: number }> {
-    return Object.keys(campos)
-      .filter((nome) => nome.startsWith(PREFIXO_QUANTIDADE) && texto(campos, nome) !== '' && texto(campos, nome) !== '0')
-      .map((nome) => ({ produtoId: nome.slice(PREFIXO_QUANTIDADE.length), quantidade: inteiro(texto(campos, nome)) }));
+  /** Pareia as listas `produtoId` e `quantidade`; linhas sem sabor escolhido são ignoradas. */
+  private lerLinhas(campos: CamposFormulario): LinhaFormulario[] {
+    const quantidades = lista(campos, 'quantidade');
+    return lista(campos, 'produtoId')
+      .map((produtoId, i) => ({ produtoId, quantidade: quantidades[i] ?? '' }))
+      .filter((l) => l.produtoId !== '');
   }
 
-  private renderizarPagina(req: Request, res: Response, formulario: ContextoFormulario, erroGeral?: string): void {
+  private renderizarPagina(req: Request, res: Response, formulario: ContextoFormulario, linhas: LinhaFormulario[], erroGeral?: string): void {
     this.renderizar(
       req,
       res,
       'Produção',
       paginaProducao({
+        categorias: this.catalogo.listarCategorias(),
+        linhas: linhas.length > 0 ? linhas : [{ produtoId: '', quantidade: '' }],
         produtos: this.catalogo.listarProdutos({ somenteAtivos: true }),
         recentes: this.producao.listarRecentes(15),
         indice: this.catalogo.indexarProdutos(),
         formulario,
         erroGeral,
       }),
+      ['/js/producao.js'],
     );
   }
 }

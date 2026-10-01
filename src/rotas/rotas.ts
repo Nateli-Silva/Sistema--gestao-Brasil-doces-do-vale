@@ -23,6 +23,7 @@ export function criarRotas(servicos: Servicos): Router {
   rotas.post('/catalogo/sabores', catalogo.cadastrarSabor);
   rotas.post('/catalogo/sabores/:id', catalogo.atualizarSabor);
   rotas.post('/catalogo/sabores/:id/alternar', catalogo.alternarAtivo);
+  rotas.post('/catalogo/sabores/:id/excluir', catalogo.excluirSabor);
 
   rotas.get('/producao', producao.exibir);
   rotas.post('/producao', producao.registrar);

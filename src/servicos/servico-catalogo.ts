@@ -1,4 +1,4 @@
-import { ErroDeValidacao, ErroNaoEncontrado, type ErrosPorCampo } from '../dominio/erros.js';
+import { ErroDeNegocio, ErroDeValidacao, ErroNaoEncontrado, type ErrosPorCampo } from '../dominio/erros.js';
 import type { Categoria, ChaveCategoria, Produto } from '../dominio/tipos.js';
 import type { Repositorios } from '../repositorios/repositorios.js';
 
@@ -69,10 +69,32 @@ export class ServicoCatalogo {
     return this.repos.produtos.inserir({ ...dados, sabor: dados.sabor.trim(), quantidadeEstoque: 0, ativo: true });
   }
 
-  atualizarProduto(id: string, dados: Pick<DadosNovoSabor, 'precoCentavos' | 'estoqueMinimo'>): Produto {
+  /** Edita nome do sabor, preço e estoque mínimo (a categoria não muda). */
+  atualizarProduto(id: string, dados: Pick<DadosNovoSabor, 'sabor' | 'precoCentavos' | 'estoqueMinimo'>): Produto {
     const produto = this.buscarProduto(id);
-    this.validarNumeros(dados);
-    return this.repos.produtos.atualizar({ ...produto, ...dados });
+    const erros: Record<string, string> = { ...this.errosNumericos(dados) };
+    if (dados.sabor.trim().length < 2) erros.sabor = 'Informe o nome do sabor.';
+    else if (this.saborJaExiste(produto.categoriaId, dados.sabor, id)) erros.sabor = 'Este sabor já existe nesta categoria.';
+    if (Object.keys(erros).length > 0) throw new ErroDeValidacao(erros);
+    return this.repos.produtos.atualizar({ ...produto, ...dados, sabor: dados.sabor.trim() });
+  }
+
+  /** Quantidade de registros (produção, movimentos e vendas) que referenciam o sabor. */
+  contarUsos(id: string): number {
+    return (
+      this.repos.producoes.listar().filter((p) => p.produtoId === id).length +
+      this.repos.movimentos.listar().filter((m) => m.produtoId === id).length +
+      this.repos.vendas.listar().filter((v) => v.itens.some((i) => i.produtoId === id)).length
+    );
+  }
+
+  /** Exclui um sabor sem histórico; se já foi produzido ou vendido, só pode ser desativado. */
+  excluirProduto(id: string): void {
+    const produto = this.buscarProduto(id);
+    if (this.contarUsos(id) > 0) {
+      throw new ErroDeNegocio(`"${produto.sabor}" já tem produção ou vendas registradas e não pode ser excluído. Use "Desativar" para escondê-lo das telas.`);
+    }
+    this.repos.produtos.remover(id);
   }
 
   alternarAtivo(id: string): Produto {
@@ -88,11 +110,6 @@ export class ServicoCatalogo {
     if (Object.keys(erros).length > 0) throw new ErroDeValidacao(erros);
   }
 
-  private validarNumeros(dados: Pick<DadosNovoSabor, 'precoCentavos' | 'estoqueMinimo'>): void {
-    const erros = this.errosNumericos(dados);
-    if (Object.keys(erros).length > 0) throw new ErroDeValidacao(erros);
-  }
-
   private errosNumericos(dados: Pick<DadosNovoSabor, 'precoCentavos' | 'estoqueMinimo'>): ErrosPorCampo {
     const erros: Record<string, string> = {};
     if (!Number.isFinite(dados.precoCentavos) || dados.precoCentavos <= 0) erros.preco = 'Informe um preço válido.';
@@ -100,11 +117,11 @@ export class ServicoCatalogo {
     return erros;
   }
 
-  private saborJaExiste(categoriaId: string, sabor: string): boolean {
+  private saborJaExiste(categoriaId: string, sabor: string, ignorarId: string | null = null): boolean {
     const alvo = sabor.trim().toLocaleLowerCase('pt-BR');
     return this.repos.produtos
       .listar()
-      .some((p) => p.categoriaId === categoriaId && p.sabor.toLocaleLowerCase('pt-BR') === alvo);
+      .some((p) => p.id !== ignorarId && p.categoriaId === categoriaId && p.sabor.toLocaleLowerCase('pt-BR') === alvo);
   }
 
   private garantirCategoriasIniciais(): void {
